@@ -1,0 +1,232 @@
+/* ============================================================
+   Sen Tolbi : charte commune
+   Un seul fichier de style pour toutes les pages.
+   Polices à charger dans chaque page (une seule ligne, légère) :
+   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet"/>
+   ============================================================ */
+
+/* ---------- 1. Palette ----------
+   Contraste mesuré sur le fond crème (#FBF4E6), norme WCAG :
+   4,5 = minimum lisible, 7 = lisible en plein soleil.
+   - Terracotta  #C4501A : 4,3  → aplats, boutons, grands titres (texte blanc dessus : 4,6)
+   - Terracotta foncé #8B3210 : 7,5 → liens et petits textes terracotta
+   - Or          #D4922A : 2,4  → décor seulement, ou texte sur fond baobab (5,1)
+   - Or foncé    #8A5A12 : 5,4  → texte doré sur fond clair
+   - Sable       #E8C98A : décor, texte sur fond baobab (8,4)
+   - Baobab      #3D2B1A : bannières sombres, titres
+   - Encre       #2A1A0E : 15,3 → texte courant
+   - Brun doux   #6B4F35 : 6,9  → textes secondaires (remplace #8B6B50, trop pâle au soleil)
+   - Vert        #2D6A4F : 5,8  → succès, espace acheteur (texte blanc dessus : 6,4)
+   - Rouge       #B42D2D : 5,7  → erreurs */
+:root{
+  --terracotta:#C4501A;
+  --terracotta-dark:#8B3210;
+  --sand:#E8C98A;
+  --sand-light:#F5E6C4;
+  --baobab:#3D2B1A;
+  --gold:#D4922A;
+  --gold-dark:#8A5A12;
+  --green:#2D6A4F;
+  --cream:#FBF4E6;
+  --cream-dark:#F2EAD8;
+  --white:#FFFDF7;
+  --text:#2A1A0E;
+  --text-soft:#6B4F35;
+  --error:#B42D2D;
+
+  --font-titre:'Playfair Display',Georgia,'Times New Roman',serif;
+  --font-texte:'DM Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+
+  --rayon:10px;
+  --ombre:0 8px 32px rgba(61,43,26,.08);
+  --pouce:48px;          /* hauteur minimale d'un élément à toucher */
+  --nav-h:62px;          /* hauteur du menu du haut */
+}
+
+/* ---------- 2. Base ---------- */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  background:var(--cream);color:var(--text);
+  font-family:var(--font-texte);font-size:1rem;line-height:1.5;
+  min-height:100vh;
+}
+body.avec-nav{padding-top:var(--nav-h);}
+img,svg{max-width:100%;display:block;}
+a{color:var(--terracotta-dark);}
+h1,h2,h3,.titre{font-family:var(--font-titre);font-weight:900;color:var(--baobab);line-height:1.2;}
+h1{font-size:clamp(1.7rem,6vw,2.4rem);}
+h2{font-size:clamp(1.3rem,4.5vw,1.8rem);}
+h3{font-size:1.15rem;font-weight:700;}
+.texte-doux{color:var(--text-soft);}
+.prix{font-family:var(--font-titre);font-weight:700;color:var(--baobab);}  /* montants en FCFA */
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px;}
+
+/* ---------- 3. Mise en page (mobile d'abord) ---------- */
+.page{max-width:460px;margin:1.5rem auto;padding:0 1rem;}
+.content{max-width:900px;margin:0 auto;padding:1.2rem 1rem;}
+@media(min-width:600px){
+  .page{margin:3rem auto;padding:0 1.5rem;}
+  .content{padding:2rem 1.5rem;}
+}
+
+/* ---------- 4. Motifs ---------- */
+/* Bande tissée (terracotta, or, vert, sable) */
+.woven{height:5px;background:repeating-linear-gradient(90deg,var(--terracotta) 0 12px,var(--gold) 12px 24px,var(--green) 24px 36px,var(--sand) 36px 48px);}
+/* Points discrets du fond actuel */
+.fond-points{background-image:radial-gradient(circle,rgba(196,80,26,.08) 1px,transparent 1px);background-size:28px 28px;}
+/* Motif wax léger : losanges et cercles, sans image à télécharger */
+.motif-wax{
+  background-color:var(--cream);
+  background-image:
+    radial-gradient(circle at 50% 50%,rgba(212,146,42,.14) 0 3px,transparent 4px),
+    linear-gradient(45deg,rgba(196,80,26,.06) 25%,transparent 25%,transparent 75%,rgba(196,80,26,.06) 75%),
+    linear-gradient(-45deg,rgba(196,80,26,.06) 25%,transparent 25%,transparent 75%,rgba(196,80,26,.06) 75%);
+  background-size:32px 32px,32px 32px,32px 32px;
+}
+
+/* ---------- 5. Logo ----------
+   Le fichier du logo (fait par ELO) ira dans img/logo.svg ou img/logo.png.
+   En attendant, seul le nom « Sen Tolbi » s'affiche. */
+.logo{display:flex;align-items:center;gap:.6rem;text-decoration:none;}
+.logo-img{width:36px;height:36px;object-fit:contain;}
+.logo-text{font-family:var(--font-titre);font-size:1.3rem;font-weight:900;color:var(--terracotta);}
+.logo-text span{color:var(--gold-dark);}
+
+/* ---------- 6. Boutons (assez grands pour le pouce) ---------- */
+.btn,.btn-primary,.btn-secondary,.btn-outline{
+  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+  min-height:var(--pouce);padding:.75rem 1.4rem;
+  border-radius:6px;border:none;
+  font-family:var(--font-texte);font-size:1rem;font-weight:600;
+  text-decoration:none;cursor:pointer;
+  transition:background .2s,transform .2s,border-color .2s;
+}
+.btn-primary{background:var(--terracotta);color:var(--white);border-bottom:3px solid var(--terracotta-dark);}
+.btn-primary:hover{background:var(--terracotta-dark);transform:translateY(1px);}
+.btn-secondary{background:var(--green);color:#fff;border-bottom:3px solid #1E4A37;}
+.btn-secondary:hover{background:#1E4A37;}
+.btn-outline{background:transparent;color:var(--terracotta-dark);border:2px solid var(--terracotta);}
+.btn-outline:hover{background:rgba(196,80,26,.08);}
+.btn-bloc{width:100%;}
+.btn-primary:disabled,.btn-secondary:disabled,.btn-outline:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+
+/* ---------- 7. Formulaires ---------- */
+.form-group{margin-bottom:1.1rem;}
+.form-group label{display:block;font-size:.8rem;font-weight:600;color:var(--baobab);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.5px;}
+input,select,textarea{
+  width:100%;min-height:var(--pouce);padding:.75rem .9rem;
+  border:1.5px solid rgba(61,43,26,.25);border-radius:6px;background:var(--white);
+  font-family:var(--font-texte);font-size:1rem;color:var(--text); /* 1rem : évite le zoom automatique sur iPhone */
+  transition:border-color .2s;
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--terracotta);box-shadow:0 0 0 3px rgba(196,80,26,.15);}
+input::placeholder,textarea::placeholder{color:#8B6B50;}
+.alert{padding:.8rem 1rem;border-radius:6px;font-size:.9rem;margin-bottom:1rem;display:none;border-left:3px solid;}
+.alert.show{display:block;}
+.alert-error{background:rgba(180,45,45,.08);border-color:var(--error);color:var(--error);}
+.alert-success{background:rgba(45,106,79,.08);border-color:var(--green);color:var(--green);}
+
+/* ---------- 8. Cartes ---------- */
+.card{background:var(--white);border-radius:12px;padding:1.4rem;border:1.5px solid rgba(196,80,26,.12);box-shadow:var(--ombre);}
+@media(min-width:600px){.card{padding:2rem;}}
+
+/* Cartes produits (catalogue, tableaux de bord) */
+.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.8rem;}
+@media(min-width:600px){.products-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1.1rem;}}
+.product-card{background:var(--white);border-radius:var(--rayon);border:1.5px solid rgba(196,80,26,.12);overflow:hidden;transition:transform .2s,box-shadow .2s;}
+.product-card:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(61,43,26,.12);}
+.product-img{height:110px;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--sand-light),var(--sand));}
+.product-body{padding:.9rem;}
+.product-cat{font-size:.72rem;color:var(--terracotta-dark);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:.2rem;}
+.product-name{font-weight:600;font-size:1rem;color:var(--baobab);margin-bottom:.25rem;}
+.product-farmer{font-size:.8rem;color:var(--text-soft);margin-bottom:.6rem;}
+.product-price{font-family:var(--font-titre);font-size:1.15rem;font-weight:700;color:var(--baobab);}
+.product-unit{font-size:.8rem;color:var(--text-soft);font-family:var(--font-texte);}
+.product-qty{font-size:.8rem;color:var(--green);font-weight:600;}
+
+/* ---------- 9. Bannière des tableaux de bord ----------
+   .user-banner seule = vendeur (fond baobab) ; ajouter .banner-acheteur pour le vert. */
+.user-banner{
+  background:var(--baobab);color:var(--sand-light);
+  border-radius:12px;padding:1.2rem;margin-bottom:1.5rem;
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  position:relative;overflow:hidden;
+}
+.user-banner::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.04) 1.5px,transparent 1.5px);background-size:20px 20px;pointer-events:none;}
+.user-banner.banner-acheteur{background:var(--green);color:#fff;}
+.user-info{display:flex;align-items:center;gap:.8rem;position:relative;}
+.user-avatar{width:44px;height:44px;border-radius:50%;background:var(--terracotta);display:flex;align-items:center;justify-content:center;font-size:1.3rem;border:2px solid rgba(255,255,255,.15);flex-shrink:0;}
+.banner-acheteur .user-avatar{background:rgba(255,255,255,.2);}
+.user-name{font-family:var(--font-titre);font-size:1.15rem;font-weight:700;}
+.user-role{font-size:.85rem;opacity:.75;margin-top:.1rem;}
+.banner-actions{display:flex;gap:.6rem;flex-wrap:wrap;position:relative;width:100%;}
+.btn-banner{
+  flex:1 1 auto;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;
+  min-height:var(--pouce);padding:.6rem 1rem;border-radius:6px;
+  background:rgba(255,255,255,.12);color:inherit;border:1px solid rgba(255,255,255,.2);
+  font-family:var(--font-texte);font-size:.95rem;font-weight:600;text-decoration:none;cursor:pointer;
+  transition:background .2s;
+}
+.btn-banner:hover{background:rgba(255,255,255,.22);}
+@media(min-width:600px){
+  .user-banner{padding:1.4rem 1.8rem;}
+  .banner-actions{width:auto;}
+  .btn-banner{flex:0 0 auto;}
+}
+
+/* ---------- 10. Menu du haut et tiroir ☰ ----------
+   Le HTML est créé par js/supabase.js (fonction initNav). */
+.nav-hamburger{position:fixed;top:0;left:0;right:0;z-index:1000;height:var(--nav-h);background:rgba(251,244,230,.97);border-bottom:2px solid rgba(196,80,26,.15);padding:0 1rem;display:flex;align-items:center;justify-content:space-between;}
+@media(min-width:600px){.nav-hamburger{padding:0 2rem;}}
+.hamburger-btn{background:none;border:none;cursor:pointer;width:var(--pouce);height:var(--pouce);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;}
+.hamburger-btn span{display:block;width:24px;height:2px;background:var(--baobab);border-radius:2px;transition:transform .3s,opacity .3s;}
+.hamburger-btn.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px);}
+.hamburger-btn.open span:nth-child(2){opacity:0;}
+.hamburger-btn.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px);}
+.nav-drawer{position:fixed;top:0;right:0;bottom:0;width:min(300px,85vw);background:var(--baobab);z-index:999;transform:translateX(100%);transition:transform .3s ease;display:flex;flex-direction:column;overflow-y:auto;visibility:hidden;}
+.nav-drawer.open{transform:none;visibility:visible;box-shadow:-8px 0 32px rgba(0,0,0,.3);}
+.nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;}
+.nav-overlay.open{display:block;}
+.drawer-header{padding:1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;}
+.drawer-logo-text{font-family:var(--font-titre);font-size:1.2rem;font-weight:900;color:var(--sand-light);}
+.drawer-logo-text span{color:var(--sand);}
+.drawer-close{background:none;border:none;color:rgba(255,255,255,.7);font-size:1.4rem;cursor:pointer;width:var(--pouce);height:var(--pouce);}
+.drawer-woven{height:4px;background:repeating-linear-gradient(90deg,var(--terracotta) 0 10px,var(--gold) 10px 20px,var(--green) 20px 30px,var(--sand) 30px 40px);}
+.drawer-user{padding:1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:.8rem;}
+.drawer-avatar{width:40px;height:40px;border-radius:50%;background:var(--terracotta);display:flex;align-items:center;justify-content:center;font-size:1.1rem;border:2px solid rgba(255,255,255,.1);flex-shrink:0;}
+.drawer-name{font-size:.95rem;font-weight:600;color:var(--sand-light);}
+.drawer-role{font-size:.8rem;color:rgba(232,201,138,.7);margin-top:.1rem;}
+.drawer-welcome{padding:1.2rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.08);}
+.drawer-welcome p{font-size:.9rem;color:rgba(232,201,138,.8);margin-bottom:.8rem;}
+.drawer-section{padding:.8rem 1.4rem .2rem;font-size:.7rem;font-weight:700;color:rgba(232,201,138,.6);text-transform:uppercase;letter-spacing:1.5px;}
+.drawer-item{display:flex;align-items:center;gap:.8rem;min-height:var(--pouce);padding:.6rem 1.4rem;color:rgba(245,230,196,.85);font-size:1rem;text-decoration:none;border-left:3px solid transparent;transition:background .2s,color .2s;}
+.drawer-item:hover{color:var(--sand-light);background:rgba(255,255,255,.05);border-left-color:rgba(196,80,26,.4);}
+.drawer-item.active{color:var(--sand);background:rgba(196,80,26,.2);border-left-color:var(--terracotta);font-weight:600;}
+.drawer-item .di-icon{font-size:1.1rem;width:20px;text-align:center;}
+.drawer-divider{height:1px;background:rgba(255,255,255,.06);margin:.5rem 0;}
+.drawer-btn-primary,.drawer-btn-outline{display:flex;align-items:center;justify-content:center;min-height:var(--pouce);margin:.4rem 0;padding:.6rem 1rem;border-radius:6px;font-family:var(--font-texte);font-size:1rem;font-weight:600;text-decoration:none;cursor:pointer;}
+.drawer-btn-primary{background:var(--terracotta);color:#fff;border:none;border-bottom:3px solid var(--terracotta-dark);}
+.drawer-btn-primary:hover{background:var(--terracotta-dark);}
+.drawer-btn-outline{background:transparent;color:var(--sand-light);border:1.5px solid rgba(255,255,255,.25);}
+.drawer-btn-outline:hover{border-color:rgba(255,255,255,.5);}
+.drawer-logout{margin:auto 1.4rem 1.4rem;min-height:var(--pouce);padding:.6rem 1rem;background:rgba(196,80,26,.2);border:1px solid rgba(196,80,26,.4);border-radius:6px;color:var(--sand);font-family:var(--font-texte);font-size:1rem;cursor:pointer;display:flex;align-items:center;gap:.5rem;justify-content:center;}
+.drawer-logout:hover{background:rgba(196,80,26,.35);}
+body.drawer-ouvert{overflow:hidden;}
+
+/* ---------- 11. Animations discrètes ---------- */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.anim-apparition{animation:fadeUp .5s ease both;}
+.anim-fondu{animation:fadeIn .4s ease both;}
+
+/* Réglage « réduire les animations » du téléphone : on coupe tout mouvement. */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+    scroll-behavior:auto !important;
+  }
+  .product-card:hover,.btn-primary:hover{transform:none;}
+}
