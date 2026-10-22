@@ -314,7 +314,7 @@
 
   // LOAD PRODUCTS
   async function loadProducts(){
-    const {data,error}=await sb.from('produits').select('*,utilisateurs(id,prenom,nom,zone,moyen_paiement)').order('created_at',{ascending:false});
+    const {data,error}=await sb.from('produits').select('*,utilisateurs:vendeurs_publics(id,prenom,nom,zone)').order('created_at',{ascending:false});
     if(error||!data||data.length===0){showEmpty();return;}
     allProducts=data;
     document.getElementById('heroStats').textContent=allProducts.length+' produit(s) disponible(s)';
