@@ -66,7 +66,6 @@
         <input type="password" id="password" placeholder="Votre mot de passe"/>
         <button class="pwd-toggle" onclick="togglePwd()" type="button">👁️</button>
       </div>
-      <div class="forgot-link"><a href="#" onclick="resetPassword()">Mot de passe oublié ?</a></div>
     </div>
     <button class="btn-primary" id="btnLogin" onclick="login()">Se connecter →</button>
     <div class="divider">ou</div>
@@ -179,9 +178,6 @@ async function buildDrawer() {
       <a href="${dashLink}" class="drawer-item"><span class="di-icon">📊</span> Mon tableau de bord</a>
       <div class="drawer-divider"></div>
       <div class="drawer-section">Mon compte</div>
-      <a href="#" class="drawer-item"><span class="di-icon">👤</span> Mon profil</a>
-      <a href="#" class="drawer-item"><span class="di-icon">📦</span> Mes commandes</a>
-      <a href="#" class="drawer-item"><span class="di-icon">💬</span> Messages</a>
       <div class="drawer-divider"></div>
       <button class="drawer-logout" onclick="logoutNav()">🚪 Se déconnecter</button>`;
   } else {
@@ -273,12 +269,6 @@ async function logoutNav() {
     }
   }
 
-  async function resetPassword(){
-    const email=document.getElementById('email').value.trim();
-    if(!email){alert('Entrez votre email d\'abord');return;}
-    const {error}=await window._sb.auth.resetPasswordForEmail(email);
-    if(!error)alert('✅ Email de réinitialisation envoyé à '+email);
-  }
 </script>
 </body>
 </html>
