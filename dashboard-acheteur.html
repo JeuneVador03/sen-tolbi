@@ -166,7 +166,7 @@
   }
 
   async function loadProduits(){
-    const {data,error}=await window._sb.from('produits').select('*,utilisateurs(prenom,nom,zone)').order('created_at',{ascending:false}).limit(8);
+    const {data,error}=await window._sb.from('produits').select('*,utilisateurs:vendeurs_publics(prenom,nom,zone)').order('created_at',{ascending:false}).limit(8);
     const container=document.getElementById('produitsContainer');
     if(error||!data||data.length===0){
       container.innerHTML=`<div class="empty-state"><div class="empty-icon">🌱</div><div class="empty-title">Aucun produit disponible</div><div class="empty-sub">Les vendeurs n'ont pas encore publié de produits. Revenez bientôt !</div><a href="catalogue.html" class="btn-go">Voir le catalogue</a></div>`;
