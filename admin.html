@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sen Tolbi — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --terracotta: #C4501A;
+      --terracotta-dark: #8B3210;
+      --sand: #E8C98A;
+      --sand-light: #F5E6C4;
+      --baobab: #3D2B1A;
+      --gold: #D4922A;
+      --green: #2D6A4F;
+      --cream: #FBF4E6;
+      --white: #FFFDF7;
+      --text: #2A1A0E;
+      --sidebar-w: 230px;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: #F2EAD8; color: var(--text); display: flex; min-height: 100vh; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: var(--sidebar-w); min-height: 100vh;
+      background: #1E1008;
+      display: flex; flex-direction: column;
+      position: fixed; left: 0; top: 0; bottom: 0;
+      z-index: 50;
+    }
+    .sidebar-logo {
+      padding: 1.4rem;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      display: flex; align-items: center; gap: .6rem;
+    }
+    .logo-icon { width: 32px; height: 32px; background: var(--terracotta); border-radius: 50% 50% 50% 20%; display: flex; align-items: center; justify-content: center; font-size: .9rem; box-shadow: 2px 2px 0 var(--terracotta-dark); }
+    .logo-text { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 900; color: var(--sand-light); }
+    .logo-text span { color: var(--sand); }
+    .admin-badge { font-size: .6rem; background: var(--terracotta); color: white; padding: .1rem .4rem; border-radius: 3px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-left: .3rem; }
+
+    .sidebar-user {
+      padding: 1rem 1.4rem;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      display: flex; align-items: center; gap: .7rem;
+    }
+    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--terracotta); display: flex; align-items: center; justify-content: center; font-size: 1rem; border: 2px solid rgba(255,255,255,.1); }
+    .user-name { font-size: .84rem; font-weight: 600; color: var(--sand-light); }
+    .user-role { font-size: .68rem; color: rgba(232,201,138,.4); margin-top: .1rem; }
+
+    .sidebar-nav { padding: .8rem 0; flex: 1; }
+    .nav-section { padding: .5rem 1.4rem .25rem; font-size: .62rem; font-weight: 700; color: rgba(232,201,138,.25); text-transform: uppercase; letter-spacing: 1.5px; }
+    .nav-item {
+      display: flex; align-items: center; gap: .7rem;
+      padding: .65rem 1.4rem; color: rgba(245,230,196,.5);
+      font-size: .85rem; cursor: pointer;
+      transition: all .2s; border-left: 3px solid transparent;
+    }
+    .nav-item:hover { color: var(--sand-light); background: rgba(255,255,255,.04); }
+    .nav-item.active { color: var(--sand); background: rgba(196,80,26,.2); border-left-color: var(--terracotta); font-weight: 500; }
+    .nav-icon { font-size: 1rem; width: 18px; text-align: center; }
+    .nav-badge { margin-left: auto; background: var(--terracotta); color: white; font-size: .62rem; font-weight: 700; padding: .12rem .4rem; border-radius: 50px; }
+
+    .sidebar-woven { height: 5px; background: repeating-linear-gradient(90deg, var(--terracotta) 0 8px, var(--gold) 8px 16px, var(--green) 16px 24px, var(--sand) 24px 32px); }
+
+    /* MAIN */
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+
+    .topbar {
+      background: var(--white); padding: .9rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(196,80,26,.1);
+      position: sticky; top: 0; z-index: 40;
+    }
+    .topbar-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--baobab); }
+    .topbar-right { display: flex; align-items: center; gap: 1rem; }
+    .topbar-date { font-size: .78rem; color: #8B6B50; }
+    .notif-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--cream); border: 1px solid rgba(196,80,26,.15); display: flex; align-items: center; justify-content: center; font-size: .95rem; cursor: pointer; position: relative; }
+    .notif-dot { position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--terracotta); border: 2px solid var(--white); }
+    .btn-export { padding: .5rem 1rem; background: var(--cream); border: 1.5px solid rgba(61,43,26,.15); border-radius: 5px; font-family: 'DM Sans', sans-serif; font-size: .8rem; font-weight: 500; cursor: pointer; color: var(--baobab); transition: all .2s; }
+    .btn-export:hover { border-color: var(--terracotta); color: var(--terracotta); }
+
+    .content { padding: 1.8rem 2rem; flex: 1; }
+
+    /* ALERT BANNER */
+    .alert-banner {
+      background: rgba(45,106,79,.08); border: 1.5px solid rgba(45,106,79,.2);
+      border-left: 4px solid var(--green);
+      border-radius: 8px; padding: .9rem 1.2rem;
+      display: flex; align-items: center; gap: .8rem;
+      margin-bottom: 1.5rem; font-size: .85rem; color: var(--green);
+    }
+
+    /* STAT CARDS */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card {
+      background: var(--white); border-radius: 10px;
+      padding: 1.3rem; border: 1.5px solid rgba(196,80,26,.1);
+      position: relative; overflow: hidden; transition: transform .2s;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(61,43,26,.1); }
+    .stat-card::after { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+    .stat-card:nth-child(1)::after { background: var(--terracotta); }
+    .stat-card:nth-child(2)::after { background: var(--gold); }
+    .stat-card:nth-child(3)::after { background: var(--green); }
+    .stat-card:nth-child(4)::after { background: var(--baobab); }
+    .stat-label { font-size: .7rem; color: #8B6B50; text-transform: uppercase; letter-spacing: .8px; font-weight: 600; margin-bottom: .4rem; }
+    .stat-value { font-family: 'Playfair Display', serif; font-size: 1.9rem; font-weight: 900; color: var(--baobab); line-height: 1; }
+    .stat-sub { font-size: .72rem; margin-top: .35rem; }
+    .up { color: var(--green); }
+    .neutral { color: #8B6B50; }
+
+    /* GRID */
+    .grid-2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1.2rem; margin-bottom: 1.2rem; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; margin-bottom: 1.2rem; }
+
+    /* CARD */
+    .card { background: var(--white); border-radius: 10px; border: 1.5px solid rgba(196,80,26,.1); overflow: hidden; }
+    .card-header { padding: 1rem 1.4rem; border-bottom: 1px solid rgba(196,80,26,.08); display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-weight: 600; font-size: .92rem; color: var(--baobab); }
+    .card-action { font-size: .75rem; color: var(--terracotta); cursor: pointer; }
+    .card-action:hover { text-decoration: underline; }
+    .card-body { padding: 1.2rem 1.4rem; }
+
+    /* REVENUE CHART */
+    .rev-chart { display: flex; align-items: flex-end; gap: .35rem; height: 110px; }
+    .rev-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: .25rem; }
+    .rev-bar { width: 100%; border-radius: 4px 4px 0 0; background: var(--terracotta); opacity: .75; transition: opacity .2s; cursor: pointer; }
+    .rev-bar:hover { opacity: 1; }
+    .rev-bar.commission { background: var(--gold); opacity: .9; }
+    .rev-label { font-size: .62rem; color: #8B6B50; }
+    .chart-legend { display: flex; gap: 1.2rem; margin-top: .8rem; }
+    .leg { display: flex; align-items: center; gap: .35rem; font-size: .72rem; color: #8B6B50; }
+    .leg-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+    /* TRANSACTIONS TABLE */
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: .55rem .8rem; font-size: .68rem; font-weight: 700; color: #8B6B50; text-transform: uppercase; letter-spacing: .8px; border-bottom: 1px solid rgba(196,80,26,.1); white-space: nowrap; }
+    td { padding: .8rem .8rem; font-size: .82rem; color: var(--baobab); border-bottom: 1px solid rgba(61,43,26,.05); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(196,80,26,.02); }
+
+    .tx-id { font-family: monospace; font-size: .75rem; color: #8B6B50; }
+    .tx-parties { font-size: .78rem; }
+    .tx-arrow { color: var(--terracotta); margin: 0 .3rem; }
+    .tx-amount { font-family: 'Playfair Display', serif; font-weight: 700; font-size: .95rem; }
+    .tx-commission { font-family: 'Playfair Display', serif; font-weight: 700; font-size: .95rem; color: var(--terracotta); }
+
+    .badge { display: inline-flex; align-items: center; gap: .25rem; padding: .2rem .6rem; border-radius: 50px; font-size: .68rem; font-weight: 600; }
+    .badge-done { background: rgba(45,106,79,.1); color: var(--green); }
+    .badge-pending { background: rgba(212,146,42,.1); color: #9B6B10; }
+    .badge-issue { background: rgba(196,80,26,.1); color: var(--terracotta); }
+
+    .pay-method { display: flex; align-items: center; gap: .3rem; font-size: .75rem; }
+
+    /* USER CARDS */
+    .user-item { display: flex; align-items: center; gap: .8rem; padding: .75rem 0; border-bottom: 1px solid rgba(61,43,26,.06); }
+    .user-item:last-child { border-bottom: none; }
+    .u-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .u-name { font-weight: 500; font-size: .85rem; color: var(--baobab); }
+    .u-meta { font-size: .72rem; color: #8B6B50; }
+    .u-stat { margin-left: auto; text-align: right; }
+    .u-stat-val { font-family: 'Playfair Display', serif; font-weight: 700; font-size: .95rem; color: var(--terracotta); }
+    .u-stat-label { font-size: .68rem; color: #8B6B50; }
+    .u-status { width: 7px; height: 7px; border-radius: 50%; margin-left: .6rem; flex-shrink: 0; }
+    .online { background: #4CAF50; }
+    .offline { background: #ccc; }
+
+    /* COMMISSION HIGHLIGHT */
+    .commission-highlight {
+      background: linear-gradient(135deg, var(--terracotta), var(--terracotta-dark));
+      border-radius: 10px; padding: 1.4rem;
+      color: white; position: relative; overflow: hidden;
+    }
+    .commission-highlight::before { content: '💰'; position: absolute; right: 1.2rem; top: 50%; transform: translateY(-50%); font-size: 3.5rem; opacity: .15; }
+    .ch-label { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; opacity: .7; margin-bottom: .3rem; font-weight: 600; }
+    .ch-value { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 900; line-height: 1; }
+    .ch-sub { font-size: .78rem; opacity: .7; margin-top: .4rem; }
+    .ch-btn { margin-top: 1rem; padding: .55rem 1.1rem; background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.3); border-radius: 5px; color: white; font-family: 'DM Sans', sans-serif; font-size: .8rem; font-weight: 500; cursor: pointer; transition: background .2s; }
+    .ch-btn:hover { background: rgba(255,255,255,.3); }
+
+    /* REGION MAP */
+    .region-item { display: flex; align-items: center; gap: .8rem; margin-bottom: .8rem; }
+    .region-item:last-child { margin-bottom: 0; }
+    .region-name { font-size: .82rem; color: var(--baobab); font-weight: 500; width: 90px; flex-shrink: 0; }
+    .region-bar-wrap { flex: 1; height: 8px; background: rgba(61,43,26,.08); border-radius: 4px; overflow: hidden; }
+    .region-bar { height: 100%; border-radius: 4px; background: var(--terracotta); }
+    .region-val { font-size: .75rem; color: #8B6B50; font-weight: 500; width: 50px; text-align: right; }
+
+    /* ALERTS */
+    .alert-item { display: flex; align-items: flex-start; gap: .7rem; padding: .8rem; border-radius: 7px; margin-bottom: .6rem; }
+    .alert-item:last-child { margin-bottom: 0; }
+    .alert-warn { background: rgba(212,146,42,.08); border: 1px solid rgba(212,146,42,.2); }
+    .alert-info { background: rgba(45,106,79,.06); border: 1px solid rgba(45,106,79,.15); }
+    .alert-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .alert-text { font-size: .8rem; color: var(--baobab); line-height: 1.5; }
+    .alert-text strong { font-weight: 600; }
+
+    @media (max-width: 1024px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .content { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🪣</div>
+    <div class="logo-text">Sen <span>Tolbi</span></div>
+    <span class="admin-badge">Admin</span>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-avatar">👑</div>
+    <div>
+      <div class="user-name">Toi — Fondateur</div>
+      <div class="user-role">Accès total · Super Admin</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Tableau de bord</div>
+    <div class="nav-item active"><span class="nav-icon">📊</span> Vue d'ensemble</div>
+    <div class="nav-item"><span class="nav-icon">💰</span> Mes commissions <span class="nav-badge">47</span></div>
+    <div class="nav-item"><span class="nav-icon">📦</span> Toutes les commandes</div>
+
+    <div class="nav-section" style="margin-top:.6rem">Utilisateurs</div>
+    <div class="nav-item"><span class="nav-icon">👨‍🌾</span> Agriculteurs</div>
+    <div class="nav-item"><span class="nav-icon">🛒</span> Acheteurs</div>
+    <div class="nav-item"><span class="nav-icon">⚠️</span> Signalements <span class="nav-badge">2</span></div>
+
+    <div class="nav-section" style="margin-top:.6rem">Plateforme</div>
+    <div class="nav-item"><span class="nav-icon">🌾</span> Produits publiés</div>
+    <div class="nav-item"><span class="nav-icon">💳</span> Paiements</div>
+    <div class="nav-item"><span class="nav-icon">📈</span> Statistiques</div>
+    <div class="nav-item"><span class="nav-icon">⚙️</span> Paramètres</div>
+  </nav>
+  <div class="sidebar-woven"></div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">Vue d'ensemble</div>
+    <div class="topbar-right">
+      <span class="topbar-date">📅 Juillet 2026</span>
+      <div class="notif-btn">🔔<div class="notif-dot"></div></div>
+      <button class="btn-export">⬇ Exporter rapport</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ALERT -->
+    <div class="alert-banner">
+      🎉 <strong>Bienvenue sur votre tableau de bord Sen Tolbi !</strong> &nbsp;Votre plateforme est en ligne et les premières commandes arrivent.
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">💰 Mes commissions (ce mois)</div>
+        <div class="stat-value">47 250 F</div>
+        <div class="stat-sub up">↑ +18% vs mois dernier</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">📦 Volume total de ventes</div>
+        <div class="stat-value">945 000 F</div>
+        <div class="stat-sub up">↑ 127 commandes ce mois</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">👥 Utilisateurs inscrits</div>
+        <div class="stat-value">1 284</div>
+        <div class="stat-sub up">↑ +42 cette semaine</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">🌾 Produits en ligne</div>
+        <div class="stat-value">347</div>
+        <div class="stat-sub neutral">89 producteurs actifs</div>
+      </div>
+    </div>
+
+    <!-- ROW 1 -->
+    <div class="grid-2">
+
+      <!-- Revenue chart -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📈 Revenus & Commissions — 7 derniers jours</span>
+          <span class="card-action">Ce mois ▾</span>
+        </div>
+        <div class="card-body">
+          <div class="rev-chart">
+            <div class="rev-col"><div class="rev-bar" style="height:55px"></div><div class="rev-bar commission" style="height:12px; margin-top:2px"></div><span class="rev-label">Lun</span></div>
+            <div class="rev-col"><div class="rev-bar" style="height:80px"></div><div class="rev-bar commission" style="height:18px; margin-top:2px"></div><span class="rev-label">Mar</span></div>
+            <div class="rev-col"><div class="rev-bar" style="height:40px"></div><div class="rev-bar commission" style="height:8px; margin-top:2px"></div><span class="rev-label">Mer</span></div>
+            <div class="rev-col"><div class="rev-bar" style="height:95px"></div><div class="rev-bar commission" style="height:22px; margin-top:2px"></div><span class="rev-label">Jeu</span></div>
+            <div class="rev-col"><div class="rev-bar" style="height:70px"></div><div class="rev-bar commission" style="height:15px; margin-top:2px"></div><span class="rev-label">Ven</span></div>
+            <div class="rev-col"><div class="rev-bar" style="height:108px"></div><div class="rev-bar commission" style="height:25px; margin-top:2px"></div><span class="rev-label">Sam</span></div>
+            <div class="rev-col"><div class="rev-bar" style="height:60px"></div><div class="rev-bar commission" style="height:13px; margin-top:2px"></div><span class="rev-label">Dim</span></div>
+          </div>
+          <div class="chart-legend">
+            <div class="leg"><div class="leg-dot" style="background:var(--terracotta)"></div> Ventes totales</div>
+            <div class="leg"><div class="leg-dot" style="background:var(--gold)"></div> Mes commissions (5%)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Commission highlight + alerts -->
+      <div style="display:flex; flex-direction:column; gap:1.2rem;">
+        <div class="commission-highlight">
+          <div class="ch-label">💰 Mon solde commissions disponible</div>
+          <div class="ch-value">38 400 F</div>
+          <div class="ch-sub">Sur 945 000 F de ventes · Taux : 5%</div>
+          <button class="ch-btn">Virer sur Wave →</button>
+        </div>
+        <div class="card" style="flex:1">
+          <div class="card-header"><span class="card-title">🔔 Alertes</span></div>
+          <div class="card-body" style="padding:.8rem 1rem">
+            <div class="alert-item alert-warn">
+              <span class="alert-icon">⚠️</span>
+              <div class="alert-text"><strong>2 signalements</strong> à traiter — des acheteurs ont signalé des problèmes sur des commandes.</div>
+            </div>
+            <div class="alert-item alert-info">
+              <span class="alert-icon">🌾</span>
+              <div class="alert-text"><strong>5 nouveaux producteurs</strong> attendent validation de leur profil.</div>
+            </div>
+            <div class="alert-item alert-info">
+              <span class="alert-icon">💳</span>
+              <div class="alert-text"><strong>3 paiements</strong> en attente de confirmation Wave depuis +24h.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ROW 2 -->
+    <div class="grid-2">
+
+      <!-- Transactions -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">💳 Dernières transactions</span>
+          <span class="card-action">Voir tout →</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Transaction</th>
+                <th>Montant</th>
+                <th>Ma comm.</th>
+                <th>Paiement</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="tx-id">#0847</span></td>
+                <td class="tx-parties">Hôtel Téranga <span class="tx-arrow">→</span> M. Diallo</td>
+                <td><span class="tx-amount">45 000 F</span></td>
+                <td><span class="tx-commission">2 250 F</span></td>
+                <td><div class="pay-method">📱 Wave</div></td>
+                <td><span class="badge badge-done">✅ Payé</span></td>
+              </tr>
+              <tr>
+                <td><span class="tx-id">#0846</span></td>
+                <td class="tx-parties">Fatou N. <span class="tx-arrow">→</span> A. Diop</td>
+                <td><span class="tx-amount">12 500 F</span></td>
+                <td><span class="tx-commission">625 F</span></td>
+                <td><div class="pay-method">🟠 Orange</div></td>
+                <td><span class="badge badge-done">✅ Payé</span></td>
+              </tr>
+              <tr>
+                <td><span class="tx-id">#0845</span></td>
+                <td class="tx-parties">Resto Ndogou <span class="tx-arrow">→</span> F. Kouyaté</td>
+                <td><span class="tx-amount">28 000 F</span></td>
+                <td><span class="tx-commission">1 400 F</span></td>
+                <td><div class="pay-method">📱 Wave</div></td>
+                <td><span class="badge badge-pending">⏳ En attente</span></td>
+              </tr>
+              <tr>
+                <td><span class="tx-id">#0844</span></td>
+                <td class="tx-parties">Épicerie Baol <span class="tx-arrow">→</span> M. Diallo</td>
+                <td><span class="tx-amount">67 000 F</span></td>
+                <td><span class="tx-commission">3 350 F</span></td>
+                <td><div class="pay-method">💳 Carte</div></td>
+                <td><span class="badge badge-done">✅ Payé</span></td>
+              </tr>
+              <tr>
+                <td><span class="tx-id">#0843</span></td>
+                <td class="tx-parties">Hôtel Savana <span class="tx-arrow">→</span> O. Badji</td>
+                <td><span class="tx-amount">15 000 F</span></td>
+                <td><span class="tx-commission">750 F</span></td>
+                <td><div class="pay-method">🔴 Free</div></td>
+                <td><span class="badge badge-issue">⚠️ Litige</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Top users -->
+      <div style="display:flex; flex-direction:column; gap:1.2rem;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">👨‍🌾 Top producteurs</span><span class="card-action">Voir tout →</span></div>
+          <div class="card-body">
+            <div class="user-item">
+              <div class="u-avatar">👨‍🌾</div>
+              <div><div class="u-name">Mamadou Diallo</div><div class="u-meta">Thiès · Maraîchage · ⭐ 4.9</div></div>
+              <div class="u-stat"><div class="u-stat-val">184 500 F</div><div class="u-stat-label">ce mois</div></div>
+              <div class="u-status online"></div>
+            </div>
+            <div class="user-item">
+              <div class="u-avatar">👩‍🌾</div>
+              <div><div class="u-name">Aïssatou Ndiaye</div><div class="u-meta">Louga · Oignons · ⭐ 4.8</div></div>
+              <div class="u-stat"><div class="u-stat-val">122 000 F</div><div class="u-stat-label">ce mois</div></div>
+              <div class="u-status online"></div>
+            </div>
+            <div class="user-item">
+              <div class="u-avatar">👨‍🌾</div>
+              <div><div class="u-name">Ousmane Badji</div><div class="u-meta">Ziguinchor · Fruits · ⭐ 4.7</div></div>
+              <div class="u-stat"><div class="u-stat-val">98 500 F</div><div class="u-stat-label">ce mois</div></div>
+              <div class="u-status offline"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Regions -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">📍 Ventes par région</span></div>
+          <div class="card-body">
+            <div class="region-item"><span class="region-name">Dakar</span><div class="region-bar-wrap"><div class="region-bar" style="width:85%"></div></div><span class="region-val">385 000 F</span></div>
+            <div class="region-item"><span class="region-name">Thiès</span><div class="region-bar-wrap"><div class="region-bar" style="width:62%"></div></div><span class="region-val">280 000 F</span></div>
+            <div class="region-item"><span class="region-name">Kaolack</span><div class="region-bar-wrap"><div class="region-bar" style="width:40%"></div></div><span class="region-val">182 000 F</span></div>
+            <div class="region-item"><span class="region-name">Ziguinchor</span><div class="region-bar-wrap"><div class="region-bar" style="width:25%"></div></div><span class="region-val">98 000 F</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

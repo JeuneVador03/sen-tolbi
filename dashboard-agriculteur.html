@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sen Tolbi — Mon espace vendeur</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{--terracotta:#C4501A;--terracotta-dark:#8B3210;--sand:#E8C98A;--sand-light:#F5E6C4;--baobab:#3D2B1A;--gold:#D4922A;--green:#2D6A4F;--cream:#FBF4E6;--white:#FFFDF7;--text:#2A1A0E;}
+    body{font-family:'DM Sans',sans-serif;background:#F2EAD8;color:var(--text);min-height:100vh;}
+
+    .content{max-width:900px;margin:0 auto;padding:2rem 1.5rem;}
+
+    /* USER BANNER */
+    .user-banner{background:var(--baobab);border-radius:12px;padding:1.4rem 1.8rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;position:relative;overflow:hidden;}
+    .user-banner::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.03) 1.5px,transparent 1.5px);background-size:20px 20px;}
+    .user-info{display:flex;align-items:center;gap:.8rem;position:relative;}
+    .user-avatar{width:44px;height:44px;border-radius:50%;background:var(--terracotta);display:flex;align-items:center;justify-content:center;font-size:1.3rem;border:2px solid rgba(255,255,255,.15);flex-shrink:0;}
+    .user-name{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--sand-light);}
+    .user-role{font-size:.75rem;color:rgba(232,201,138,.5);margin-top:.1rem;display:flex;align-items:center;gap:.3rem;}
+    .role-dot{width:6px;height:6px;border-radius:50%;background:#4CAF50;}
+    .banner-actions{display:flex;gap:.7rem;position:relative;}
+    .btn-banner{padding:.55rem 1.1rem;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;cursor:pointer;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:.4rem;transition:all .2s;}
+    .btn-dashboard{background:rgba(196,80,26,.25);color:var(--sand);border:1px solid rgba(196,80,26,.4);}
+    .btn-dashboard:hover{background:rgba(196,80,26,.4);}
+    .btn-logout-banner{background:rgba(255,255,255,.08);color:rgba(245,230,196,.6);border:1px solid rgba(255,255,255,.1);}
+    .btn-logout-banner:hover{background:rgba(255,255,255,.15);color:var(--sand-light);}
+
+    /* STATS */
+    .cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;}
+    .stat-card{background:var(--white);border-radius:10px;padding:1.3rem;border:1.5px solid rgba(196,80,26,.1);position:relative;overflow:hidden;}
+    .stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+    .stat-card:nth-child(1)::after{background:var(--terracotta);}
+    .stat-card:nth-child(2)::after{background:var(--gold);}
+    .stat-card:nth-child(3)::after{background:var(--green);}
+    .stat-label{font-size:.7rem;color:#8B6B50;text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:.4rem;}
+    .stat-value{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--baobab);}
+    .stat-sub{font-size:.72rem;color:#8B6B50;margin-top:.3rem;}
+
+    /* GUIDE */
+    .guide{background:var(--white);border-radius:10px;border:1.5px solid rgba(196,80,26,.1);padding:1.4rem;margin-bottom:1.2rem;}
+    .guide h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--baobab);margin-bottom:1rem;}
+    .guide-step{display:flex;align-items:center;gap:.8rem;padding:.55rem 0;border-bottom:1px solid rgba(61,43,26,.05);}
+    .guide-step:last-child{border-bottom:none;}
+    .guide-num{width:26px;height:26px;border-radius:50%;background:var(--cream);border:2px solid rgba(196,80,26,.2);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:var(--terracotta);flex-shrink:0;transition:all .3s;}
+    .guide-num.done{background:var(--green);border-color:var(--green);color:white;}
+    .guide-text{font-size:.84rem;color:var(--baobab);}
+    .guide-text.done{color:#8B6B50;text-decoration:line-through;}
+
+    /* CARD */
+    .card{background:var(--white);border-radius:10px;border:1.5px solid rgba(196,80,26,.1);overflow:hidden;margin-bottom:1.2rem;}
+    .card-header{padding:1rem 1.4rem;border-bottom:1px solid rgba(196,80,26,.08);display:flex;align-items:center;justify-content:space-between;}
+    .card-title{font-weight:600;font-size:.92rem;color:var(--baobab);}
+    .card-action{font-size:.78rem;color:var(--terracotta);cursor:pointer;font-weight:500;}
+    .card-body{padding:1.4rem;}
+
+    /* PRODUCTS */
+    .product-item{display:flex;align-items:center;gap:1rem;padding:.9rem 0;border-bottom:1px solid rgba(61,43,26,.06);}
+    .product-item:last-child{border-bottom:none;}
+    .product-emoji{font-size:1.8rem;width:44px;height:44px;background:var(--cream);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .product-info{flex:1;}
+    .product-name{font-weight:500;font-size:.9rem;color:var(--baobab);}
+    .product-meta{font-size:.75rem;color:#8B6B50;margin-top:.15rem;}
+    .product-price{font-family:'Playfair Display',serif;font-weight:700;font-size:1rem;color:var(--terracotta);white-space:nowrap;}
+    .btn-icon{width:30px;height:30px;border-radius:5px;border:1px solid rgba(61,43,26,.15);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:all .15s;}
+    .btn-icon:hover{background:var(--cream);border-color:var(--terracotta);}
+
+    /* EMPTY */
+    .empty-state{text-align:center;padding:2.5rem 1rem;}
+    .empty-icon{font-size:3rem;margin-bottom:.8rem;}
+    .empty-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--baobab);margin-bottom:.4rem;}
+    .empty-sub{font-size:.85rem;color:#8B6B50;font-weight:300;margin-bottom:1.2rem;line-height:1.6;}
+    .btn-start{padding:.75rem 1.6rem;background:var(--terracotta);color:white;border:none;border-bottom:3px solid var(--terracotta-dark);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;}
+
+    /* ALERTS */
+    .alert{padding:.7rem 1rem;border-radius:6px;font-size:.82rem;margin-bottom:1rem;display:none;border-left:3px solid;}
+    .alert.show{display:block;}
+    .alert-success{background:rgba(45,106,79,.08);border-color:var(--green);color:var(--green);}
+    .alert-error{background:rgba(214,59,59,.08);border-color:#D63B3B;color:#D63B3B;}
+
+    /* ADD PRODUCT BTN */
+    .fab{position:fixed;bottom:2rem;right:2rem;width:56px;height:56px;background:var(--terracotta);color:white;border:none;border-radius:50%;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 20px rgba(196,80,26,.4);border-bottom:3px solid var(--terracotta-dark);transition:all .2s;z-index:50;}
+    .fab:hover{transform:scale(1.1);}
+
+    /* MODAL */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+    .modal-overlay.open{display:flex;animation:fadeIn .2s ease;}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .modal{background:var(--white);border-radius:12px;padding:2rem;width:90%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,.2);}
+    .modal-title{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--baobab);margin-bottom:1.4rem;}
+    .form-group{margin-bottom:1rem;}
+    label{display:block;font-size:.75rem;font-weight:600;color:var(--baobab);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.5px;}
+    input,select,textarea{width:100%;padding:.7rem .9rem;border:1.5px solid rgba(61,43,26,.15);border-radius:6px;background:var(--white);font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--text);transition:border-color .2s;}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--terracotta);}
+    .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;}
+    .modal-btns{display:flex;gap:.8rem;margin-top:1.4rem;}
+    .btn-cancel{flex:1;padding:.75rem;background:transparent;border:1.5px solid rgba(61,43,26,.2);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--baobab);}
+    .btn-save{flex:1;padding:.75rem;background:var(--terracotta);color:white;border:none;border-bottom:3px solid var(--terracotta-dark);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;}
+    .btn-save:disabled{opacity:.6;cursor:not-allowed;}
+    .confirm-modal{text-align:center;}
+    .confirm-modal .icon{font-size:2.5rem;margin-bottom:1rem;}
+    .confirm-modal p{font-size:.9rem;color:#6B4F35;margin-bottom:1.5rem;}
+
+    .loading{text-align:center;padding:2rem;color:#8B6B50;}
+    .woven-top{height:5px;background:repeating-linear-gradient(90deg,var(--terracotta) 0 8px,var(--gold) 8px 16px,var(--green) 16px 24px,var(--sand) 24px 32px);}
+  </style>
+</head>
+<body>
+
+<div class="woven-top"></div>
+
+<div class="content">
+  <div class="alert alert-success" id="alertSuccess"></div>
+  <div class="alert alert-error" id="alertError"></div>
+
+  <!-- USER BANNER (remplace la sidebar) -->
+  <div class="user-banner">
+    <div class="user-info">
+      <div class="user-avatar">👨‍🌾</div>
+      <div>
+        <div class="user-name" id="userName">Mon compte</div>
+        <div class="user-role"><span class="role-dot"></span> Vendeur · Dakar</div>
+      </div>
+    </div>
+    <div class="banner-actions">
+      <a href="catalogue.html" class="btn-banner btn-dashboard">🛒 Voir le catalogue</a>
+      <a href="index.html" class="btn-banner btn-dashboard">🏠 Accueil</a>
+      <button class="btn-banner btn-logout-banner" onclick="showLogout()">🚪 Déconnexion</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="cards-grid">
+    <div class="stat-card">
+      <div class="stat-label">🌾 Produits en ligne</div>
+      <div class="stat-value" id="statProduits">0</div>
+      <div class="stat-sub" id="statProduitsLabel">Aucun produit publié</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">📦 Commandes reçues</div>
+      <div class="stat-value">0</div>
+      <div class="stat-sub">Bientôt disponible</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">💰 Revenus</div>
+      <div class="stat-value">0 F</div>
+      <div class="stat-sub">Bientôt disponible</div>
+    </div>
+  </div>
+
+  <!-- GUIDE -->
+  <div class="guide">
+    <h3>🗺️ Guide de démarrage</h3>
+    <div class="guide-step"><div class="guide-num done">✓</div><div class="guide-text done">Créer votre compte</div></div>
+    <div class="guide-step"><div class="guide-num" id="g2">2</div><div class="guide-text" id="g2text">Ajouter votre premier produit</div></div>
+    <div class="guide-step"><div class="guide-num">3</div><div class="guide-text">Recevoir votre première commande</div></div>
+  </div>
+
+  <!-- PRODUITS -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">🌾 Mes produits</span>
+      <span class="card-action" onclick="openModal()">+ Ajouter un produit</span>
+    </div>
+    <div class="card-body" id="produitsContainer">
+      <div class="loading">⏳ Chargement...</div>
+    </div>
+  </div>
+</div>
+
+<!-- FAB bouton ajouter -->
+<button class="fab" onclick="openModal()" title="Ajouter un produit">+</button>
+
+<!-- MODAL AJOUT PRODUIT -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title">🌾 Ajouter un produit</div>
+    <div class="form-group"><label>Nom du produit *</label><input type="text" id="prodNom" placeholder="Ex: Tomates, Mangues, Mil..."/></div>
+    <div class="form-row-2">
+      <div class="form-group"><label>Catégorie *</label>
+        <select id="prodCat"><option value="Légumes">Légumes</option><option value="Fruits">Fruits</option><option value="Céréales">Céréales</option><option value="Légumineuses">Légumineuses</option><option value="Viande / Volaille">Viande / Volaille</option><option value="Produits laitiers">Produits laitiers</option><option value="Épices">Épices</option></select>
+      </div>
+      <div class="form-group"><label>Unité *</label>
+        <select id="prodUnite"><option value="kg">kg</option><option value="tonne">tonne</option><option value="sac (50kg)">sac (50kg)</option><option value="caisse">caisse</option><option value="pièce">pièce</option><option value="litre">litre</option></select>
+      </div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-group"><label>Prix (FCFA) *</label><input type="number" id="prodPrix" placeholder="Ex: 300" min="0"/></div>
+      <div class="form-group"><label>Quantité disponible *</label><input type="number" id="prodQte" placeholder="Ex: 100" min="1"/></div>
+    </div>
+    <div class="form-group"><label>Description <span style="color:#8B6B50;font-weight:300;text-transform:none;font-size:.7rem">(optionnel)</span></label><textarea id="prodDesc" rows="2" placeholder="Variété, méthode de culture..."></textarea></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-save" id="btnSave" onclick="saveProduct()">Publier →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DÉCONNEXION -->
+<div class="modal-overlay" id="logoutModal" onclick="closeLogout(event)">
+  <div class="modal confirm-modal">
+    <div class="icon">🚪</div>
+    <div class="modal-title" style="text-align:center">Se déconnecter ?</div>
+    <p>Vous allez être redirigé vers la page d'accueil.</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeLogout()">Annuler</button>
+      <button class="btn-save" onclick="confirmLogout()">Se déconnecter</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const { createClient } = supabase;
+  window._sb = createClient('https://hrhnawzhxwahqkhvxomr.supabase.co', 'sb_publishable_8MOWd0KD2jgcV1aN3VaPzA_RfBQLEHf');
+
+  const emojis={'Légumes':'🥬','Fruits':'🍎','Céréales':'🌾','Légumineuses':'🥜','Viande / Volaille':'🥩','Produits laitiers':'🥛','Épices':'🌿'};
+
+  async function init(){
+    const {data:{session}}=await window._sb.auth.getSession();
+    if(!session){window.location.href='connexion.html';return;}
+    const user=JSON.parse(localStorage.getItem('sentolbi_user')||'{}');
+    if(user.prenom) document.getElementById('userName').textContent=user.prenom+' '+(user.nom||'');
+    loadProduits();
+  }
+
+  async function loadProduits(){
+    const {data:{session}}=await window._sb.auth.getSession();
+    if(!session)return;
+    const {data,error}=await window._sb.from('produits').select('*').eq('vendeur_id',session.user.id).order('created_at',{ascending:false});
+    const container=document.getElementById('produitsContainer');
+    const count=data?data.length:0;
+    document.getElementById('statProduits').textContent=count;
+    document.getElementById('statProduitsLabel').textContent=count===0?'Aucun produit publié':count+' produit(s) visible(s) par les acheteurs';
+    if(count>0){document.getElementById('g2').classList.add('done');document.getElementById('g2').textContent='✓';document.getElementById('g2text').classList.add('done');}
+    if(error||count===0){
+      container.innerHTML=`<div class="empty-state"><div class="empty-icon">🌱</div><div class="empty-title">Aucun produit pour l'instant</div><div class="empty-sub">Ajoutez votre première récolte pour être visible par les acheteurs.</div><button class="btn-start" onclick="openModal()">+ Ajouter mon premier produit</button></div>`;
+      return;
+    }
+    container.innerHTML=data.map(p=>`
+      <div class="product-item">
+        <div class="product-emoji">${emojis[p.categorie]||'🌿'}</div>
+        <div class="product-info">
+          <div class="product-name">${p.nom}</div>
+          <div class="product-meta">${p.categorie} · ${p.quantite} ${p.unite} disponibles</div>
+        </div>
+        <div class="product-price">${parseInt(p.prix).toLocaleString('fr-FR')} F/${p.unite}</div>
+        <div style="display:flex;gap:.4rem"><button class="btn-icon" onclick="deleteProduct('${p.id}')">🗑️</button></div>
+      </div>`).join('');
+  }
+
+  async function saveProduct(){
+    const nom=document.getElementById('prodNom').value.trim();
+    const cat=document.getElementById('prodCat').value;
+    const unite=document.getElementById('prodUnite').value;
+    const prix=parseInt(document.getElementById('prodPrix').value);
+    const qte=parseInt(document.getElementById('prodQte').value);
+    const desc=document.getElementById('prodDesc').value.trim();
+    if(!nom||!prix||!qte){alert('Veuillez remplir tous les champs obligatoires (*)');return;}
+    const btn=document.getElementById('btnSave');
+    btn.disabled=true;btn.textContent='Publication...';
+    const {data:{session}}=await window._sb.auth.getSession();
+    if(!session){alert('Session expirée, reconnectez-vous.');return;}
+    const {error}=await window._sb.from('produits').insert([{vendeur_id:session.user.id,nom,categorie:cat,prix,quantite:qte,unite,description:desc||null}]);
+    btn.disabled=false;btn.textContent='Publier →';
+    if(error){showAlert('error','❌ Erreur : '+error.message);return;}
+    document.getElementById('prodNom').value='';
+    document.getElementById('prodPrix').value='';
+    document.getElementById('prodQte').value='';
+    document.getElementById('prodDesc').value='';
+    closeModal();
+    showAlert('success','✅ Produit publié ! Il est maintenant visible par les acheteurs.');
+    loadProduits();
+  }
+
+  async function deleteProduct(id){
+    if(!confirm('Supprimer ce produit ?'))return;
+    const {error}=await window._sb.from('produits').delete().eq('id',id);
+    if(!error){showAlert('success','✅ Produit supprimé.');loadProduits();}
+  }
+
+  function showAlert(type,msg){
+    const el=document.getElementById('alert'+(type==='success'?'Success':'Error'));
+    el.textContent=msg;el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'),4000);
+  }
+
+  function openModal(){document.getElementById('modalOverlay').classList.add('open');}
+  function closeModal(e){if(!e||e.target===document.getElementById('modalOverlay'))document.getElementById('modalOverlay').classList.remove('open');}
+  function showLogout(){document.getElementById('logoutModal').classList.add('open');}
+  function closeLogout(e){if(!e||e.target===document.getElementById('logoutModal'))document.getElementById('logoutModal').classList.remove('open');}
+  async function confirmLogout(){
+    await window._sb.auth.signOut();
+    localStorage.removeItem('sentolbi_user');
+    window.location.href='index.html';
+  }
+
+  init();
+</script>
+</body>
+</html>

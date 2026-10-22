@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sen Tolbi — Inscription</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{--terracotta:#C4501A;--terracotta-dark:#8B3210;--sand:#E8C98A;--sand-light:#F5E6C4;--baobab:#3D2B1A;--gold:#D4922A;--green:#2D6A4F;--cream:#FBF4E6;--white:#FFFDF7;--text:#2A1A0E;--error:#D63B3B;}
+    body{background:var(--cream);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;background-image:radial-gradient(circle,rgba(196,80,26,.08) 1px,transparent 1px);background-size:28px 28px;}
+    .woven{height:5px;background:repeating-linear-gradient(90deg,var(--terracotta) 0 12px,var(--gold) 12px 24px,var(--green) 24px 36px,var(--sand) 36px 48px);}
+    .page{max-width:520px;margin:2rem auto;padding:0 1.5rem;animation:fadeUp .5s ease both;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+    .page-title{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--baobab);margin-bottom:.3rem;text-align:center;}
+    .page-sub{text-align:center;color:#6B4F35;font-size:.9rem;font-weight:300;margin-bottom:1.8rem;}
+    .type-selector{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.8rem;}
+    .type-btn{padding:1.2rem 1rem;border-radius:10px;border:2px solid rgba(196,80,26,.2);background:var(--white);cursor:pointer;text-align:center;transition:all .2s;}
+    .type-btn.active{border-color:var(--terracotta);background:rgba(196,80,26,.06);box-shadow:0 4px 16px rgba(196,80,26,.15);}
+    .type-icon{font-size:2rem;margin-bottom:.4rem;display:block;}
+    .type-label{font-weight:600;font-size:.95rem;color:var(--baobab);display:block;margin-bottom:.2rem;}
+    .type-btn.active .type-label{color:var(--terracotta);}
+    .type-desc{font-size:.75rem;color:#8B6B50;}
+    .card{background:var(--white);border-radius:12px;padding:2rem;border:1.5px solid rgba(196,80,26,.12);box-shadow:0 8px 32px rgba(61,43,26,.08);}
+    .steps-nav{display:flex;align-items:center;justify-content:center;gap:.5rem;margin-bottom:2rem;}
+    .step-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;border:2px solid rgba(196,80,26,.2);color:#8B6B50;background:var(--white);transition:all .3s;}
+    .step-dot.active{background:var(--terracotta);border-color:var(--terracotta);color:white;}
+    .step-dot.done{background:var(--green);border-color:var(--green);color:white;}
+    .step-line{flex:1;height:2px;background:rgba(196,80,26,.12);max-width:60px;transition:background .3s;}
+    .step-line.done{background:var(--green);}
+    .form-step{display:none;} .form-step.active{display:block;animation:fadeUp .4s ease both;}
+    .step-title{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--baobab);margin-bottom:1.4rem;padding-bottom:.7rem;border-bottom:1px solid rgba(196,80,26,.1);}
+    .form-group{margin-bottom:1.1rem;}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;}
+    label{display:block;font-size:.75rem;font-weight:600;color:var(--baobab);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.5px;}
+    .required{color:var(--terracotta);} .optional{color:#8B6B50;font-weight:400;text-transform:none;letter-spacing:0;font-size:.7rem;}
+    input,select,textarea{width:100%;padding:.7rem .9rem;border:1.5px solid rgba(61,43,26,.15);border-radius:6px;background:var(--white);font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--text);transition:border-color .2s;}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--terracotta);box-shadow:0 0 0 3px rgba(196,80,26,.08);}
+    input::placeholder{color:#B09075;} input.error{border-color:var(--error);}
+    .error-msg{font-size:.72rem;color:var(--error);margin-top:.25rem;display:none;} .error-msg.show{display:block;}
+    .phone-wrap{display:flex;} .country-select{width:130px;flex-shrink:0;border-radius:6px 0 0 6px;border-right:none;background:var(--cream);font-size:.82rem;padding:.7rem .5rem;} .phone-input{border-radius:0 6px 6px 0;}
+    .chips{display:flex;flex-wrap:wrap;gap:.5rem;}
+    .chip{padding:.4rem .9rem;border-radius:50px;border:1.5px solid rgba(61,43,26,.15);background:var(--white);font-size:.8rem;font-weight:500;color:var(--baobab);cursor:pointer;transition:all .2s;}
+    .chip:hover,.chip.active{border-color:var(--terracotta);background:rgba(196,80,26,.07);color:var(--terracotta);}
+    .payment-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+    .payment-option{display:flex;align-items:center;gap:.6rem;padding:.65rem .9rem;border:1.5px solid rgba(61,43,26,.12);border-radius:6px;cursor:pointer;}
+    .payment-option input[type="checkbox"]{width:16px;height:16px;accent-color:var(--terracotta);flex-shrink:0;}
+    .pay-icon{font-size:1.1rem;} .pay-name{font-size:.85rem;font-weight:500;}
+    .pwd-wrap{position:relative;}
+    .pwd-toggle{position:absolute;right:.9rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:1rem;background:none;border:none;color:#8B6B50;}
+    .pwd-bar{height:4px;border-radius:2px;background:rgba(61,43,26,.1);overflow:hidden;margin-top:.5rem;}
+    .pwd-fill{height:100%;border-radius:2px;width:0%;transition:width .3s,background .3s;}
+    .pwd-label{font-size:.7rem;color:#8B6B50;margin-top:.25rem;}
+    .cgu{display:flex;align-items:flex-start;gap:.6rem;margin-top:1rem;padding:.8rem;background:var(--cream);border-radius:6px;}
+    .cgu input{width:16px;height:16px;accent-color:var(--terracotta);margin-top:2px;flex-shrink:0;}
+    .cgu label{font-size:.78rem;color:#6B4F35;font-weight:300;text-transform:none;letter-spacing:0;}
+    .cgu a{color:var(--terracotta);}
+    .security-note{background:rgba(45,106,79,.08);border:1px solid rgba(45,106,79,.2);border-left:3px solid #2D6A4F;border-radius:6px;padding:.8rem 1rem;font-size:.82rem;color:#2D6A4F;margin-bottom:1.2rem;}
+    .btn-primary{width:100%;padding:.9rem;background:var(--terracotta);color:var(--white);border:none;border-radius:6px;border-bottom:3px solid var(--terracotta-dark);font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:.8rem;display:flex;align-items:center;justify-content:center;gap:.5rem;}
+    .btn-primary:hover{background:var(--terracotta-dark);transform:translateY(1px);}
+    .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+    .btn-secondary{width:100%;padding:.8rem;background:transparent;color:var(--baobab);border:1.5px solid rgba(61,43,26,.2);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;cursor:pointer;transition:all .2s;margin-top:.6rem;}
+    .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:.8rem;}
+    .btn-row .btn-primary,.btn-row .btn-secondary{margin-top:0;}
+    .alert{padding:.8rem 1rem;border-radius:6px;font-size:.82rem;margin-bottom:1rem;display:none;border-left:3px solid;}
+    .alert.show{display:block;} .alert-error{background:rgba(214,59,59,.08);border-color:#D63B3B;color:#D63B3B;}
+    .success-screen{display:none;text-align:center;padding:1.5rem 0;}
+    .success-icon{width:70px;height:70px;background:rgba(45,106,79,.1);border-radius:50%;margin:0 auto 1.2rem;display:flex;align-items:center;justify-content:center;font-size:2rem;}
+    .success-screen h2{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--baobab);margin-bottom:.6rem;}
+    .success-screen p{font-size:.9rem;color:#6B4F35;font-weight:300;margin-bottom:1.5rem;}
+    .bottom-links{text-align:center;margin-top:1.5rem;font-size:.88rem;color:#6B4F35;}
+    .bottom-links a{color:var(--terracotta);font-weight:500;text-decoration:none;}
+    @media(max-width:600px){.form-row{grid-template-columns:1fr;}.payment-grid{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+<div class="woven"></div>
+<div class="page">
+  <h1 class="page-title">Créer un compte</h1>
+  <p class="page-sub">Rejoignez Sen Tolbi gratuitement</p>
+  <div class="type-selector">
+    <div class="type-btn active" onclick="selectType('vendeur',this)"><span class="type-icon">👨‍🌾</span><span class="type-label">Vendeur</span><span class="type-desc">Je vends mes récoltes</span></div>
+    <div class="type-btn" onclick="selectType('acheteur',this)"><span class="type-icon">🛒</span><span class="type-label">Acheteur</span><span class="type-desc">Je cherche des produits</span></div>
+  </div>
+  <div class="card">
+    <div class="steps-nav" id="stepsNav">
+      <div class="step-dot active" id="dot1">1</div><div class="step-line" id="line1"></div>
+      <div class="step-dot" id="dot2">2</div><div class="step-line" id="line2"></div>
+      <div class="step-dot" id="dot3">3</div>
+    </div>
+    <div class="alert alert-error" id="alertError"></div>
+    <!-- STEP 1 -->
+    <div class="form-step active" id="step1">
+      <div class="step-title">👤 Informations personnelles</div>
+      <div class="form-row">
+        <div class="form-group"><label>Prénom <span class="required">*</span></label><input type="text" id="prenom" placeholder="Mamadou"/><div class="error-msg" id="err-prenom">Obligatoire</div></div>
+        <div class="form-group"><label>Nom <span class="required">*</span></label><input type="text" id="nom" placeholder="Diallo"/><div class="error-msg" id="err-nom">Obligatoire</div></div>
+      </div>
+      <div class="form-group">
+        <label>Email <span class="required">*</span></label>
+        <input type="email" id="email" placeholder="votre@email.com"/>
+        <div class="error-msg" id="err-email">Email obligatoire</div>
+        <div style="font-size:.72rem;color:#8B6B50;margin-top:.3rem">Utilisé pour vous connecter de façon sécurisée</div>
+      </div>
+      <div class="form-group">
+        <label>Téléphone <span class="required">*</span></label>
+        <div class="phone-wrap">
+          <select class="country-select" id="countryCode">
+            <option value="+221">🇸🇳 +221</option><option value="+33">🇫🇷 +33</option>
+            <option value="+1">🇺🇸 +1</option><option value="+44">🇬🇧 +44</option>
+            <option value="+212">🇲🇦 +212</option><option value="+225">🇨🇮 +225</option>
+            <option value="+223">🇲🇱 +223</option><option value="+224">🇬🇳 +224</option>
+            <option value="+32">🇧🇪 +32</option><option value="+41">🇨🇭 +41</option>
+          </select>
+          <input type="tel" id="tel" class="phone-input" placeholder="77 000 00 00"/>
+        </div>
+        <div class="error-msg" id="err-tel">Numéro obligatoire</div>
+      </div>
+      <button class="btn-primary" onclick="goStep(2)">Continuer →</button>
+    </div>
+    <!-- STEP 2 -->
+    <div class="form-step" id="step2">
+      <div id="formVendeur">
+        <div class="step-title">🌾 Votre exploitation</div>
+        <div class="form-group"><label>Nom exploitation <span class="optional">(optionnel)</span></label><input type="text" id="nomExploitation" placeholder="Ex: Ferme Diallo..."/></div>
+        <div class="form-group"><label>Type de production <span class="required">*</span></label>
+          <select id="typeProduction"><option value="">Choisissez...</option><option>Maraîchage (légumes)</option><option>Céréales (mil, maïs, riz...)</option><option>Fruits tropicaux</option><option>Arachides / Légumineuses</option><option>Élevage / Viande</option><option>Volaille / Œufs</option><option>Produits laitiers</option><option>Épices / Plantes aromatiques</option><option>Plusieurs types</option></select>
+        </div>
+        <div class="form-group"><label>Zone à Dakar <span class="required">*</span></label>
+          <select id="zone"><option value="">Sélectionnez...</option><option>Parcelles Assainies</option><option>Pikine</option><option>Guédiawaye</option><option>Rufisque</option><option>Plateau</option><option>Médina</option><option>Grand Yoff</option><option>Ouakam</option><option>Ngor / Almadies</option><option>HLM / Liberté</option><option>Autre</option></select>
+        </div>
+        <div class="form-group"><label>Paiements acceptés</label>
+          <div class="payment-grid">
+            <label class="payment-option"><input type="checkbox" id="pw1" checked/><span class="pay-icon">📱</span><span class="pay-name">Wave</span></label>
+            <label class="payment-option"><input type="checkbox" id="pw2" checked/><span class="pay-icon">🟠</span><span class="pay-name">Orange Money</span></label>
+            <label class="payment-option"><input type="checkbox" id="pw3"/><span class="pay-icon">🔴</span><span class="pay-name">Free Money</span></label>
+            <label class="payment-option"><input type="checkbox" id="pw4"/><span class="pay-icon">💳</span><span class="pay-name">Carte</span></label>
+          </div>
+        </div>
+      </div>
+      <div id="formAcheteur" style="display:none">
+        <div class="step-title">🛒 Votre profil acheteur</div>
+        <div class="form-group"><label>Vous êtes <span class="required">*</span></label>
+          <div class="chips">
+            <div class="chip active" onclick="toggleChip(this)">👤 Particulier</div>
+            <div class="chip" onclick="toggleChip(this)">🍽️ Restaurant</div>
+            <div class="chip" onclick="toggleChip(this)">🏨 Hôtel</div>
+            <div class="chip" onclick="toggleChip(this)">🏪 Commerce</div>
+            <div class="chip" onclick="toggleChip(this)">🏭 Grossiste</div>
+            <div class="chip" onclick="toggleChip(this)">🏫 Institution</div>
+          </div>
+        </div>
+        <div class="form-group"><label>Nom établissement <span class="optional">(optionnel)</span></label><input type="text" id="nomEtablissement" placeholder="Ex: Hôtel Téranga..."/></div>
+        <div class="form-group"><label>Quartier à Dakar <span class="required">*</span></label>
+          <select id="zoneAcheteur"><option value="">Sélectionnez...</option><option>Plateau / Centre-ville</option><option>Médina</option><option>Pikine</option><option>Guédiawaye</option><option>Rufisque</option><option>Grand Yoff</option><option>Almadies / Ngor</option><option>HLM / Liberté</option><option>Parcelles Assainies</option><option>Autre</option></select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="goStep(1)">← Retour</button>
+        <button class="btn-primary" style="margin-top:0" onclick="goStep(3)">Continuer →</button>
+      </div>
+    </div>
+    <!-- STEP 3 -->
+    <div class="form-step" id="step3">
+      <div class="step-title">🔒 Mot de passe sécurisé</div>
+      <div class="security-note">🔒 Votre mot de passe sera <strong>chiffré</strong> — même nous ne pouvons pas le lire.</div>
+      <div class="form-group">
+        <label>Mot de passe <span class="required">*</span></label>
+        <div class="pwd-wrap"><input type="password" id="password" placeholder="Minimum 6 caractères" oninput="checkPwd(this.value)"/><button class="pwd-toggle" onclick="togglePwd('password',this)" type="button">👁️</button></div>
+        <div class="pwd-bar"><div class="pwd-fill" id="pwdFill"></div></div>
+        <div class="pwd-label" id="pwdLabel">Entrez un mot de passe</div>
+        <div class="error-msg" id="err-pwd">Minimum 6 caractères</div>
+      </div>
+      <div class="form-group">
+        <label>Confirmer <span class="required">*</span></label>
+        <div class="pwd-wrap"><input type="password" id="password2" placeholder="Répétez votre mot de passe"/><button class="pwd-toggle" onclick="togglePwd('password2',this)" type="button">👁️</button></div>
+        <div class="error-msg" id="err-pwd2">Les mots de passe ne correspondent pas</div>
+      </div>
+      <div class="cgu"><input type="checkbox" id="cguCheck"/><label for="cguCheck">J'accepte les <a href="#">conditions d'utilisation</a> de Sen Tolbi. Je comprends qu'une commission de <strong>5%</strong> est prélevée sur chaque transaction.</label></div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="goStep(2)">← Retour</button>
+        <button class="btn-primary" style="margin-top:0" id="btnSubmit" onclick="submitForm()">Créer mon compte 🎉</button>
+      </div>
+    </div>
+    <!-- SUCCESS -->
+    <div class="success-screen" id="successScreen">
+      <div class="success-icon">✅</div>
+      <h2>Bienvenue sur Sen Tolbi !</h2>
+      <p id="successMsg">Votre compte a été créé avec succès.</p>
+      <button class="btn-primary" id="btnDashboard">Accéder à mon espace →</button>
+    </div>
+  </div>
+  <div class="bottom-links">Déjà un compte ? <a href="connexion.html">Se connecter</a></div>
+</div>
+
+<script>
+  const { createClient } = supabase;
+  window._sb = createClient('https://hrhnawzhxwahqkhvxomr.supabase.co', 'sb_publishable_8MOWd0KD2jgcV1aN3VaPzA_RfBQLEHf');
+
+  const NAV_HTML = `
+<style>
+.nav-hamburger { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(251,244,230,0.97); backdrop-filter: blur(10px); border-bottom: 2px solid rgba(196,80,26,.15); padding: .9rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
+.nav-logo-icon { width: 34px; height: 34px; background: #C4501A; border-radius: 50% 50% 50% 20%; display: flex; align-items: center; justify-content: center; font-size: 1rem; box-shadow: 2px 2px 0 #8B3210; }
+.nav-logo-text { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; color: #C4501A; }
+.nav-logo-text span { color: #D4922A; }
+.hamburger-btn { background: none; border: none; cursor: pointer; padding: .5rem; display: flex; flex-direction: column; gap: 5px; }
+.hamburger-btn span { display: block; width: 24px; height: 2px; background: #3D2B1A; border-radius: 2px; transition: all .3s; }
+.hamburger-btn.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+.hamburger-btn.open span:nth-child(2) { opacity: 0; }
+.hamburger-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+.nav-drawer { position: fixed; top: 0; right: -320px; bottom: 0; width: 300px; background: #3D2B1A; z-index: 999; transition: right .3s ease; display: flex; flex-direction: column; overflow-y: auto; }
+.nav-drawer.open { right: 0; box-shadow: -8px 0 32px rgba(0,0,0,.3); }
+.nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 998; backdrop-filter: blur(2px); }
+.nav-overlay.open { display: block; }
+.drawer-header { padding: 1.4rem; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; justify-content: space-between; }
+.drawer-logo-text { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 900; color: #F5E6C4; }
+.drawer-logo-text span { color: #E8C98A; }
+.drawer-close { background: none; border: none; color: rgba(255,255,255,.5); font-size: 1.4rem; cursor: pointer; }
+.drawer-user { padding: 1rem 1.4rem; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: .8rem; }
+.drawer-avatar { width: 40px; height: 40px; border-radius: 50%; background: #C4501A; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; border: 2px solid rgba(255,255,255,.1); flex-shrink: 0; }
+.drawer-name { font-size: .9rem; font-weight: 600; color: #F5E6C4; }
+.drawer-role { font-size: .72rem; color: rgba(232,201,138,.4); margin-top: .1rem; }
+.drawer-woven { height: 4px; background: repeating-linear-gradient(90deg, #C4501A 0 10px, #D4922A 10px 20px, #2D6A4F 20px 30px, #E8C98A 30px 40px); }
+.drawer-section { padding: .6rem 1.4rem .2rem; font-size: .62rem; font-weight: 700; color: rgba(232,201,138,.25); text-transform: uppercase; letter-spacing: 1.5px; }
+.drawer-item { display: flex; align-items: center; gap: .8rem; padding: .8rem 1.4rem; color: rgba(245,230,196,.6); font-size: .9rem; text-decoration: none; transition: all .2s; border-left: 3px solid transparent; }
+.drawer-item:hover { color: #F5E6C4; background: rgba(255,255,255,.05); border-left-color: rgba(196,80,26,.4); }
+.drawer-item.active { color: #E8C98A; background: rgba(196,80,26,.2); border-left-color: #C4501A; font-weight: 500; }
+.drawer-item .di-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+.drawer-divider { height: 1px; background: rgba(255,255,255,.06); margin: .5rem 0; }
+.drawer-btn-primary { margin: .5rem 1.4rem; padding: .8rem 1rem; background: #C4501A; color: white; border: none; border-bottom: 3px solid #8B3210; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: .9rem; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; display: block; transition: all .2s; }
+.drawer-btn-primary:hover { background: #8B3210; }
+.drawer-btn-outline { margin: .3rem 1.4rem; padding: .75rem 1rem; background: transparent; color: rgba(245,230,196,.7); border: 1.5px solid rgba(255,255,255,.15); border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: .9rem; cursor: pointer; text-align: center; text-decoration: none; display: block; transition: all .2s; }
+.drawer-btn-outline:hover { border-color: rgba(255,255,255,.3); color: white; }
+.drawer-logout { margin: auto 1.4rem 1.4rem; padding: .75rem 1rem; background: rgba(196,80,26,.15); border: 1px solid rgba(196,80,26,.3); border-radius: 6px; color: rgba(232,201,138,.7); font-family: 'DM Sans', sans-serif; font-size: .88rem; cursor: pointer; display: flex; align-items: center; gap: .5rem; justify-content: center; transition: all .2s; width: calc(100% - 2.8rem); }
+.drawer-logout:hover { background: rgba(196,80,26,.3); color: #E8C98A; }
+</style>
+
+<nav class="nav-hamburger" id="mainNav">
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-icon">🪣</div>
+    <div class="nav-logo-text">Sen <span>Tolbi</span></div>
+  </a>
+  <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleDrawer()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="nav-overlay" id="navOverlay" onclick="closeDrawer()"></div>
+
+<div class="nav-drawer" id="navDrawer">
+  <div class="drawer-header">
+    <div class="drawer-logo-text">Sen <span>Tolbi</span></div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-woven"></div>
+  <div id="drawerUserSection"></div>
+  <div id="drawerNav"></div>
+</div>
+`;
+
+function initNav() {
+  document.body.insertAdjacentHTML('afterbegin', NAV_HTML);
+  // Add padding to body for fixed nav
+  document.body.style.paddingTop = '62px';
+  buildDrawer();
+}
+
+async function buildDrawer() {
+  const { data: { session } } = await window._sb.auth.getSession();
+  const user = JSON.parse(localStorage.getItem('sentolbi_user') || '{}');
+  const isLoggedIn = session || user.prenom;
+  const dashLink = user.type === 'acheteur' ? 'dashboard-acheteur.html' : 'dashboard-agriculteur.html';
+  const name = user.prenom ? (user.prenom + ' ' + (user.nom || '')) : (session?.user?.email || '');
+  const role = user.type === 'acheteur' ? 'Acheteur' : (user.type === 'vendeur' ? 'Vendeur' : '');
+
+  const userSection = document.getElementById('drawerUserSection');
+  const navSection = document.getElementById('drawerNav');
+
+  if (isLoggedIn) {
+    userSection.innerHTML = `
+      <div class="drawer-user">
+        <div class="drawer-avatar">${user.type === 'acheteur' ? '🛒' : '👨‍🌾'}</div>
+        <div>
+          <div class="drawer-name">${name}</div>
+          <div class="drawer-role">${role} · Dakar</div>
+        </div>
+      </div>`;
+
+    navSection.innerHTML = `
+      <div class="drawer-section">Navigation</div>
+      <a href="index.html" class="drawer-item"><span class="di-icon">🏠</span> Accueil</a>
+      <a href="catalogue.html" class="drawer-item"><span class="di-icon">🛒</span> Catalogue produits</a>
+      <a href="${dashLink}" class="drawer-item"><span class="di-icon">📊</span> Mon tableau de bord</a>
+      <div class="drawer-divider"></div>
+      <div class="drawer-section">Mon compte</div>
+      <a href="#" class="drawer-item"><span class="di-icon">👤</span> Mon profil</a>
+      <a href="#" class="drawer-item"><span class="di-icon">📦</span> Mes commandes</a>
+      <a href="#" class="drawer-item"><span class="di-icon">💬</span> Messages</a>
+      <div class="drawer-divider"></div>
+      <button class="drawer-logout" onclick="logoutNav()">🚪 Se déconnecter</button>`;
+  } else {
+    userSection.innerHTML = `
+      <div style="padding:1.2rem 1.4rem; border-bottom:1px solid rgba(255,255,255,.08);">
+        <div style="font-size:.85rem; color:rgba(232,201,138,.5); margin-bottom:.8rem;">Bienvenue sur Sen Tolbi 🇸🇳</div>
+        <a href="inscription.html" class="drawer-btn-primary">Créer un compte</a>
+        <a href="connexion.html" class="drawer-btn-outline">Se connecter</a>
+      </div>`;
+
+    navSection.innerHTML = `
+      <div class="drawer-section">Navigation</div>
+      <a href="index.html" class="drawer-item"><span class="di-icon">🏠</span> Accueil</a>
+      <a href="catalogue.html" class="drawer-item"><span class="di-icon">🛒</span> Voir les produits</a>
+      <a href="inscription.html" class="drawer-item"><span class="di-icon">📝</span> S'inscrire gratuitement</a>
+      <a href="connexion.html" class="drawer-item"><span class="di-icon">🔑</span> Se connecter</a>`;
+  }
+}
+
+function toggleDrawer() {
+  const drawer = document.getElementById('navDrawer');
+  const overlay = document.getElementById('navOverlay');
+  const btn = document.getElementById('hamburgerBtn');
+  drawer.classList.toggle('open');
+  overlay.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+function closeDrawer() {
+  document.getElementById('navDrawer').classList.remove('open');
+  document.getElementById('navOverlay').classList.remove('open');
+  document.getElementById('hamburgerBtn').classList.remove('open');
+}
+
+async function logoutNav() {
+  await window._sb.auth.signOut();
+  localStorage.removeItem('sentolbi_user');
+  window.location.href = 'index.html';
+}
+  initNav();
+
+  let currentType = 'vendeur', currentStep = 1;
+
+  function selectType(type, el) {
+    currentType = type;
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('formVendeur').style.display = type === 'vendeur' ? 'block' : 'none';
+    document.getElementById('formAcheteur').style.display = type === 'acheteur' ? 'block' : 'none';
+  }
+
+  function goStep(n) {
+    if (n > currentStep && currentStep === 1) {
+      const prenom = document.getElementById('prenom').value.trim();
+      const nom = document.getElementById('nom').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const tel = document.getElementById('tel').value.trim();
+      let valid = true;
+      if (!prenom){showError('prenom',true);valid=false;}else showError('prenom',false);
+      if (!nom){showError('nom',true);valid=false;}else showError('nom',false);
+      if (!email){showError('email',true);valid=false;}else showError('email',false);
+      if (!tel){showError('tel',true);valid=false;}else showError('tel',false);
+      if (!valid) return;
+    }
+    document.getElementById('step'+currentStep).classList.remove('active');
+    currentStep = n;
+    document.getElementById('step'+n).classList.add('active');
+    updateDots();
+    window.scrollTo({top:100,behavior:'smooth'});
+  }
+
+  function updateDots() {
+    for (let i=1;i<=3;i++){
+      const dot=document.getElementById('dot'+i);
+      dot.classList.remove('active','done');
+      if(i<currentStep){dot.classList.add('done');dot.textContent='✓';}
+      else if(i===currentStep){dot.classList.add('active');dot.textContent=i;}
+      else dot.textContent=i;
+    }
+    for(let i=1;i<=2;i++) document.getElementById('line'+i).classList.toggle('done',i<currentStep);
+  }
+
+  function showError(id,show){
+    const input=document.getElementById(id);
+    const msg=document.getElementById('err-'+id);
+    if(input)input.classList.toggle('error',show);
+    if(msg)msg.classList.toggle('show',show);
+  }
+
+  function checkPwd(val){
+    let score=0;
+    if(val.length>=6)score++;if(val.length>=10)score++;
+    if(/[A-Z]/.test(val))score++;if(/[0-9]/.test(val))score++;
+    const colors=['#D63B3B','#D4922A','#D4922A','#2D6A4F','#2D6A4F'];
+    const labels=['','Trop court','Faible','Moyen','Fort','Très fort'];
+    document.getElementById('pwdFill').style.width=(score*25)+'%';
+    document.getElementById('pwdFill').style.background=colors[score]||'#ccc';
+    document.getElementById('pwdLabel').textContent=val.length===0?'Entrez un mot de passe':(labels[score]||'');
+  }
+
+  function togglePwd(id,btn){
+    const input=document.getElementById(id);
+    input.type=input.type==='password'?'text':'password';
+    btn.textContent=input.type==='password'?'👁️':'🙈';
+  }
+
+  function toggleChip(el){el.classList.toggle('active');}
+
+  async function submitForm(){
+    const pwd=document.getElementById('password').value;
+    const pwd2=document.getElementById('password2').value;
+    const cgu=document.getElementById('cguCheck').checked;
+    let valid=true;
+    if(!pwd||pwd.length<6){showError('pwd',true);valid=false;}else showError('pwd',false);
+    if(pwd!==pwd2){showError('pwd2',true);valid=false;}else showError('pwd2',false);
+    if(!cgu){alert("Veuillez accepter les conditions d'utilisation");return;}
+    if(!valid)return;
+
+    const btn=document.getElementById('btnSubmit');
+    btn.disabled=true;btn.textContent='Création en cours...';
+
+    const prenom=document.getElementById('prenom').value.trim();
+    const nom=document.getElementById('nom').value.trim();
+    const email=document.getElementById('email').value.trim();
+    const code=document.getElementById('countryCode').value;
+    const tel=code+document.getElementById('tel').value.trim().replace(/\s/g,'');
+
+    let zone='',typeProduction='',typeAcheteur='',moyenPaiement='';
+    if(currentType==='vendeur'){
+      zone=document.getElementById('zone').value;
+      typeProduction=document.getElementById('typeProduction').value;
+      const paiements=[];
+      if(document.getElementById('pw1').checked)paiements.push('Wave');
+      if(document.getElementById('pw2').checked)paiements.push('Orange Money');
+      if(document.getElementById('pw3').checked)paiements.push('Free Money');
+      if(document.getElementById('pw4').checked)paiements.push('Carte');
+      moyenPaiement=paiements.join(', ');
+    } else {
+      zone=document.getElementById('zoneAcheteur').value;
+      const chips=document.querySelectorAll('#formAcheteur .chip.active');
+      typeAcheteur=Array.from(chips).map(c=>c.textContent.trim()).join(', ');
+    }
+
+    const {data:authData,error:authError}=await window._sb.auth.signUp({
+      email,password:pwd,
+      options:{data:{prenom,nom,type:currentType}}
+    });
+
+    if(authError){
+      const alertEl=document.getElementById('alertError');
+      alertEl.textContent='❌ '+(authError.message.includes('already registered')?'Cet email est déjà utilisé.':authError.message);
+      alertEl.classList.add('show');
+      btn.disabled=false;btn.textContent='Créer mon compte 🎉';
+      return;
+    }
+
+    await window._sb.from('utilisateurs').insert([{
+      id:authData.user.id,prenom,nom,telephone:tel,
+      email,mot_de_passe:'🔒 chiffré',
+      type:currentType,zone,
+      type_production:typeProduction||null,
+      type_acheteur:typeAcheteur||null,
+      moyen_paiement:moyenPaiement||null
+    }]);
+
+    localStorage.setItem('sentolbi_user',JSON.stringify({
+      id:authData.user.id,prenom,nom,email,type:currentType,zone
+    }));
+
+    document.getElementById('stepsNav').style.display='none';
+    document.getElementById('step3').classList.remove('active');
+    document.getElementById('successScreen').style.display='block';
+    document.getElementById('successMsg').textContent='Bienvenue '+prenom+' ! Votre compte '+currentType+' est créé et sécurisé.';
+    document.getElementById('btnDashboard').onclick=()=>{
+      window.location.href=currentType==='vendeur'?'dashboard-agriculteur.html':'dashboard-acheteur.html';
+    };
+  }
+</script>
+</body>
+</html>
