@@ -244,9 +244,8 @@
     <div class="form-group">
       <label>Mode de livraison</label>
       <select id="deliveryMode">
-        <option value="livraison">🚚 Livraison à domicile (+1 500 F)</option>
-        <option value="retrait">🏪 Retrait chez le producteur (Gratuit)</option>
-        <option value="relais">📦 Point relais (+800 F)</option>
+        <option value="livraison">🚚 Livraison à domicile</option>
+        <option value="retrait">🏪 Retrait chez le producteur</option>
       </select>
     </div>
     <div class="form-group">
@@ -254,20 +253,15 @@
       <input type="text" id="adresse" placeholder="Ex: Rue 10, Plateau, Dakar"/>
     </div>
     <div class="form-group">
-      <label>Moyen de paiement</label>
-      <div class="pay-options">
-        <label class="pay-opt selected" onclick="selectPay(this)"><input type="radio" name="pay" value="wave" checked/> 📱 Wave</label>
-        <label class="pay-opt" onclick="selectPay(this)"><input type="radio" name="pay" value="orange"/> 🟠 Orange Money</label>
-        <label class="pay-opt" onclick="selectPay(this)"><input type="radio" name="pay" value="free"/> 🔴 Free Money</label>
-        <label class="pay-opt" onclick="selectPay(this)"><input type="radio" name="pay" value="carte"/> 💳 Carte</label>
-      </div>
+      <label>Paiement</label>
+      <div style="background:var(--cream);border-radius:6px;padding:.8rem 1rem;font-size:.82rem;color:#6B4F35;">Le paiement en ligne n'est pas encore disponible. L'équipe Sen Tolbi vous contacte pour organiser le paiement et la livraison.</div>
     </div>
     <div class="form-group">
       <label>Note pour le vendeur <span style="color:#8B6B50;font-weight:300;text-transform:none;font-size:.7rem">(optionnel)</span></label>
       <textarea id="noteVendeur" rows="2" placeholder="Instructions spéciales, horaires disponibles..."></textarea>
     </div>
     <div style="background:var(--cream);border-radius:6px;padding:.8rem 1rem;font-size:.82rem;color:#6B4F35;margin-bottom:.5rem;">
-      💰 Total à payer : <strong id="modalTotal">0 F</strong>
+      💰 Total, commission comprise (hors livraison) : <strong id="modalTotal">0 F</strong>
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeCheckout()">Annuler</button>
@@ -280,10 +274,9 @@
 <div class="modal-overlay" id="successModal">
   <div class="modal success-modal">
     <div class="s-icon">✅</div>
-    <h2>Commande confirmée !</h2>
+    <h2>Commande envoyée !</h2>
     <div class="woven-mini"></div>
-    <div class="order-ref" id="orderRef">STL-000000</div>
-    <p>Votre commande a été enregistrée. Le vendeur sera notifié et vous contactera pour confirmer la livraison.</p>
+    <p>Votre commande a été enregistrée. Le paiement en ligne n'est pas encore disponible : l'équipe Sen Tolbi vous contacte pour organiser le paiement et la livraison.</p>
     <button class="btn-success" onclick="location.href='dashboard-acheteur.html'">Retour à mon espace →</button>
   </div>
 </div>
@@ -453,10 +446,6 @@
     if(!e||e.target===document.getElementById('checkoutModal'))
       document.getElementById('checkoutModal').classList.remove('open');
   }
-  function selectPay(el){
-    document.querySelectorAll('.pay-opt').forEach(o=>o.classList.remove('selected'));
-    el.classList.add('selected');
-  }
 
   async function passCommande(){
     const user=JSON.parse(localStorage.getItem('sentolbi_user')||'{}');
@@ -467,12 +456,9 @@
 
     const delivery=document.getElementById('deliveryMode').value;
     const adresse=document.getElementById('adresse').value;
-    const payMode=document.querySelector('input[name="pay"]:checked')?.value||'wave';
     const note=document.getElementById('noteVendeur').value;
     const total=cart.reduce((s,i)=>s+i.prix*i.qty,0);
     const commission=Math.round(total*0.05);
-    const fraisLivraison=delivery==='livraison'?1500:delivery==='relais'?800:0;
-    const grandTotal=total+commission+fraisLivraison;
 
     // Enregistrer chaque article comme une commande
     const commandes=cart.map(item=>({
@@ -493,8 +479,6 @@
 
     // Succès
     document.getElementById('checkoutModal').classList.remove('open');
-    const ref='STL-'+Date.now().toString().slice(-6);
-    document.getElementById('orderRef').textContent=ref;
     document.getElementById('successModal').classList.add('open');
     cart=[];
     updateCart();

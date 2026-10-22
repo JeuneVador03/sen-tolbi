@@ -177,7 +177,7 @@
         <div class="pwd-wrap"><input type="password" id="password2" placeholder="Répétez votre mot de passe"/><button class="pwd-toggle" onclick="togglePwd('password2',this)" type="button">👁️</button></div>
         <div class="error-msg" id="err-pwd2">Les mots de passe ne correspondent pas</div>
       </div>
-      <div class="cgu"><input type="checkbox" id="cguCheck"/><label for="cguCheck">J'accepte les <a href="#">conditions d'utilisation</a> de Sen Tolbi. Je comprends qu'une commission de <strong>5%</strong> est prélevée sur chaque transaction.</label></div>
+      <div class="cgu"><input type="checkbox" id="cguCheck"/><label for="cguCheck">J'accepte les conditions d'utilisation de Sen Tolbi. Je comprends qu'une commission de <strong>5%</strong> est prélevée sur chaque transaction.</label></div>
       <div class="btn-row">
         <button class="btn-secondary" onclick="goStep(2)">← Retour</button>
         <button class="btn-primary" style="margin-top:0" id="btnSubmit" onclick="submitForm()">Créer mon compte 🎉</button>
@@ -295,9 +295,6 @@ async function buildDrawer() {
       <a href="${dashLink}" class="drawer-item"><span class="di-icon">📊</span> Mon tableau de bord</a>
       <div class="drawer-divider"></div>
       <div class="drawer-section">Mon compte</div>
-      <a href="#" class="drawer-item"><span class="di-icon">👤</span> Mon profil</a>
-      <a href="#" class="drawer-item"><span class="di-icon">📦</span> Mes commandes</a>
-      <a href="#" class="drawer-item"><span class="di-icon">💬</span> Messages</a>
       <div class="drawer-divider"></div>
       <button class="drawer-logout" onclick="logoutNav()">🚪 Se déconnecter</button>`;
   } else {
