@@ -18,3 +18,5 @@ Ce dépôt est publié automatiquement sur Netlify : ce qui est sur la branche `
 - Les grosses fonctionnalités passent d'abord par l'accord des associés et le Trello.
 
 Premier enregistrement : copie fidèle du site en ligne du 14/07/2026, pour pouvoir revenir en arrière.
+
+Essai de Coumba : première modification via GitHub
