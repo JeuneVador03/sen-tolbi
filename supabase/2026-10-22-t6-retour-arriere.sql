@@ -30,6 +30,11 @@ drop function if exists public.preparer_commande();
 drop function if exists public.mon_type();
 
 -- 3. Remettre les trois règles d'origine (ouvertes à tous, comme avant)
+--    (Le 22/10, ces règles ont été désactivées avec « using (false) » au lieu
+--     d'être supprimées : on les retire d'abord pour les recréer à l'identique.)
+drop policy if exists "Accès public utilisateurs" on public.utilisateurs;
+drop policy if exists "Accès public produits"     on public.produits;
+drop policy if exists "Accès public commandes"    on public.commandes;
 create policy "Accès public utilisateurs" on public.utilisateurs
   for all to public using (true) with check (true);
 create policy "Accès public produits" on public.produits
