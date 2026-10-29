@@ -226,8 +226,14 @@
 .hamburger-btn.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
 .hamburger-btn.open span:nth-child(2) { opacity: 0; }
 .hamburger-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
-.nav-drawer { position: fixed; top: 0; right: -320px; bottom: 0; width: 300px; background: #3D2B1A; z-index: 999; transition: right .3s ease; display: flex; flex-direction: column; overflow-y: auto; }
-.nav-drawer.open { right: 0; box-shadow: -8px 0 32px rgba(0,0,0,.3); }
+.nav-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 300px; max-width: 85vw; background: #3D2B1A; z-index: 999; transform: translateX(100%); visibility: hidden; transition: transform .3s ease, visibility .3s; display: flex; flex-direction: column; overflow-y: auto; }
+.nav-drawer.open { transform: none; visibility: visible; box-shadow: -8px 0 32px rgba(0,0,0,.3); }
+/* Téléphone (360 px) : barre du haut plus compacte, rien ne dépasse */
+@media (max-width: 480px) {
+  .nav-hamburger { padding: .75rem 1rem; }
+  .nav-logo-icon { width: 30px; height: 30px; font-size: .9rem; }
+  .nav-logo-text { font-size: 1.15rem; }
+}
 .nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 998; backdrop-filter: blur(2px); }
 .nav-overlay.open { display: block; }
 .drawer-header { padding: 1.4rem; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; justify-content: space-between; }
@@ -258,7 +264,7 @@
     <div class="nav-logo-icon">🪣</div>
     <div class="nav-logo-text">Sen <span>Tolbi</span></div>
   </a>
-  <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleDrawer()">
+  <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleDrawer()" aria-label="Ouvrir le menu">
     <span></span><span></span><span></span>
   </button>
 </nav>
@@ -283,13 +289,47 @@ function initNav() {
   buildDrawer();
 }
 
+
+// ===== Outils communs (tâche 6) =====
+// Protège l'affichage des textes saisis par les utilisateurs (prénom, nom…).
+function echapper(t) {
+  return String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Page d'arrivée selon le type de compte.
+function pageDeSonEspace(type) {
+  if (type === 'acheteur') return 'dashboard-acheteur.html';
+  if (type === 'admin') return 'admin.html';
+  return 'dashboard-agriculteur.html';
+}
+
+// Lit le profil dans « utilisateurs » (les règles ne laissent lire que le sien).
+// S'il est introuvable, on se rabat sur le type donné à l'inscription.
+async function lireProfil(authUser) {
+  try {
+    const { data, error } = await window._sb.from('utilisateurs').select('*').eq('id', authUser.id).maybeSingle();
+    if (!error && data) {
+      localStorage.setItem('sentolbi_user', JSON.stringify(data));
+      return data;
+    }
+  } catch (e) { /* réseau : on se rabat ci-dessous */ }
+  const meta = authUser.user_metadata || {};
+  const type = ['vendeur', 'acheteur'].includes(meta.type) ? meta.type : null;
+  return { id: authUser.id, email: authUser.email, prenom: meta.prenom || '', nom: meta.nom || '', type, sansProfil: true };
+}
+
+// La barre du haut ne se fie plus seulement au navigateur : il faut une vraie session.
 async function buildDrawer() {
-  const { data: { session } } = await window._sb.auth.getSession();
-  const user = JSON.parse(localStorage.getItem('sentolbi_user') || '{}');
-  const isLoggedIn = session || user.prenom;
-  const dashLink = user.type === 'acheteur' ? 'dashboard-acheteur.html' : 'dashboard-agriculteur.html';
+  let session = null;
+  try { ({ data: { session } } = await window._sb.auth.getSession()); } catch (e) {}
+  if (!session) localStorage.removeItem('sentolbi_user');
+  let user = session ? JSON.parse(localStorage.getItem('sentolbi_user') || '{}') : {};
+  if (session && !user.type) user = await lireProfil(session.user);
+  const isLoggedIn = !!session;
+  const dashLink = pageDeSonEspace(user.type);
   const name = user.prenom ? (user.prenom + ' ' + (user.nom || '')) : (session?.user?.email || '');
-  const role = user.type === 'acheteur' ? 'Acheteur' : (user.type === 'vendeur' ? 'Vendeur' : '');
+  const role = user.type === 'acheteur' ? 'Acheteur' : (user.type === 'vendeur' ? 'Vendeur' : (user.type === 'admin' ? 'Admin' : ''));
+  const roleLigne = [role, user.zone].filter(Boolean).join(' · ');
 
   const userSection = document.getElementById('drawerUserSection');
   const navSection = document.getElementById('drawerNav');
@@ -299,8 +339,8 @@ async function buildDrawer() {
       <div class="drawer-user">
         <div class="drawer-avatar">${user.type === 'acheteur' ? '🛒' : '👨‍🌾'}</div>
         <div>
-          <div class="drawer-name">${name}</div>
-          <div class="drawer-role">${role} · Dakar</div>
+          <div class="drawer-name">${echapper(name)}</div>
+          <div class="drawer-role">${echapper(roleLigne)}</div>
         </div>
       </div>`;
 
@@ -309,8 +349,6 @@ async function buildDrawer() {
       <a href="index.html" class="drawer-item"><span class="di-icon">🏠</span> Accueil</a>
       <a href="catalogue.html" class="drawer-item"><span class="di-icon">🛒</span> Catalogue produits</a>
       <a href="${dashLink}" class="drawer-item"><span class="di-icon">📊</span> Mon tableau de bord</a>
-      <div class="drawer-divider"></div>
-      <div class="drawer-section">Mon compte</div>
       <div class="drawer-divider"></div>
       <button class="drawer-logout" onclick="logoutNav()">🚪 Se déconnecter</button>`;
   } else {
@@ -330,38 +368,25 @@ async function buildDrawer() {
   }
 }
 
-function toggleDrawer() {
-  const drawer = document.getElementById('navDrawer');
-  const overlay = document.getElementById('navOverlay');
-  const btn = document.getElementById('hamburgerBtn');
-  drawer.classList.toggle('open');
-  overlay.classList.toggle('open');
-  btn.classList.toggle('open');
-}
-
-function closeDrawer() {
-  document.getElementById('navDrawer').classList.remove('open');
-  document.getElementById('navOverlay').classList.remove('open');
-  document.getElementById('hamburgerBtn').classList.remove('open');
-}
-
 async function logoutNav() {
   await window._sb.auth.signOut();
   localStorage.removeItem('sentolbi_user');
   window.location.href = 'index.html';
 }
 
+  // Boutons de l'accueil : seulement si une vraie session existe, vers le bon espace.
   async function updateHero() {
-    const { data: { session } } = await window._sb.auth.getSession();
-    const user = JSON.parse(localStorage.getItem('sentolbi_user') || '{}');
-    if (session || user.prenom) {
-      const dashLink = user.type === 'acheteur' ? 'dashboard-acheteur.html' : 'dashboard-agriculteur.html';
-      document.getElementById('heroCtas').innerHTML = `
-        <a href="${dashLink}" class="btn-primary">Mon tableau de bord →</a>
-        <a href="catalogue.html" class="btn-outline">Voir les produits</a>`;
-      document.getElementById('ctaBtn').textContent = 'Accéder à mon espace →';
-      document.getElementById('ctaBtn').href = dashLink;
-    }
+    let session = null;
+    try { ({ data: { session } } = await window._sb.auth.getSession()); } catch (e) {}
+    if (!session) return;
+    let user = JSON.parse(localStorage.getItem('sentolbi_user') || '{}');
+    if (!user.type) user = await lireProfil(session.user);
+    const dashLink = pageDeSonEspace(user.type);
+    document.getElementById('heroCtas').innerHTML = `
+      <a href="${dashLink}" class="btn-primary">Mon tableau de bord →</a>
+      <a href="catalogue.html" class="btn-outline">Voir les produits</a>`;
+    document.getElementById('ctaBtn').textContent = 'Accéder à mon espace →';
+    document.getElementById('ctaBtn').href = dashLink;
   }
 
   initNav();

@@ -37,7 +37,7 @@
     .required{color:var(--terracotta);} .optional{color:#8B6B50;font-weight:400;text-transform:none;letter-spacing:0;font-size:.7rem;}
     input,select,textarea{width:100%;padding:.7rem .9rem;border:1.5px solid rgba(61,43,26,.15);border-radius:6px;background:var(--white);font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--text);transition:border-color .2s;}
     input:focus,select:focus,textarea:focus{outline:none;border-color:var(--terracotta);box-shadow:0 0 0 3px rgba(196,80,26,.08);}
-    input::placeholder{color:#B09075;} input.error{border-color:var(--error);}
+    input::placeholder{color:#B09075;} input.error,select.error{border-color:var(--error);} .chips.error .chip{border-color:var(--error);}
     .error-msg{font-size:.72rem;color:var(--error);margin-top:.25rem;display:none;} .error-msg.show{display:block;}
     .phone-wrap{display:flex;} .country-select{width:130px;flex-shrink:0;border-radius:6px 0 0 6px;border-right:none;background:var(--cream);font-size:.82rem;padding:.7rem .5rem;} .phone-input{border-radius:0 6px 6px 0;}
     .chips{display:flex;flex-wrap:wrap;gap:.5rem;}
@@ -99,8 +99,8 @@
       </div>
       <div class="form-group">
         <label>Email <span class="required">*</span></label>
-        <input type="email" id="email" placeholder="votre@email.com"/>
-        <div class="error-msg" id="err-email">Email obligatoire</div>
+        <input type="email" id="email" placeholder="votre@email.com" autocomplete="email"/>
+        <div class="error-msg" id="err-email">E-mail obligatoire</div>
         <div style="font-size:.72rem;color:#8B6B50;margin-top:.3rem">Utilisé pour vous connecter de façon sécurisée</div>
       </div>
       <div class="form-group">
@@ -126,9 +126,11 @@
         <div class="form-group"><label>Nom exploitation <span class="optional">(optionnel)</span></label><input type="text" id="nomExploitation" placeholder="Ex: Ferme Diallo..."/></div>
         <div class="form-group"><label>Type de production <span class="required">*</span></label>
           <select id="typeProduction"><option value="">Choisissez...</option><option>Maraîchage (légumes)</option><option>Céréales (mil, maïs, riz...)</option><option>Fruits tropicaux</option><option>Arachides / Légumineuses</option><option>Élevage / Viande</option><option>Volaille / Œufs</option><option>Produits laitiers</option><option>Épices / Plantes aromatiques</option><option>Plusieurs types</option></select>
+          <div class="error-msg" id="err-typeProduction">Choisissez votre type de production</div>
         </div>
         <div class="form-group"><label>Zone à Dakar <span class="required">*</span></label>
           <select id="zone"><option value="">Sélectionnez...</option><option>Parcelles Assainies</option><option>Pikine</option><option>Guédiawaye</option><option>Rufisque</option><option>Plateau</option><option>Médina</option><option>Grand Yoff</option><option>Ouakam</option><option>Ngor / Almadies</option><option>HLM / Liberté</option><option>Autre</option></select>
+          <div class="error-msg" id="err-zone">Choisissez votre zone</div>
         </div>
         <div class="form-group"><label>Paiements acceptés</label>
           <div class="payment-grid">
@@ -142,7 +144,7 @@
       <div id="formAcheteur" style="display:none">
         <div class="step-title">🛒 Votre profil acheteur</div>
         <div class="form-group"><label>Vous êtes <span class="required">*</span></label>
-          <div class="chips">
+          <div class="chips" id="chipsAcheteur">
             <div class="chip active" onclick="toggleChip(this)">👤 Particulier</div>
             <div class="chip" onclick="toggleChip(this)">🍽️ Restaurant</div>
             <div class="chip" onclick="toggleChip(this)">🏨 Hôtel</div>
@@ -150,10 +152,12 @@
             <div class="chip" onclick="toggleChip(this)">🏭 Grossiste</div>
             <div class="chip" onclick="toggleChip(this)">🏫 Institution</div>
           </div>
+          <div class="error-msg" id="err-chipsAcheteur">Choisissez au moins une option</div>
         </div>
         <div class="form-group"><label>Nom établissement <span class="optional">(optionnel)</span></label><input type="text" id="nomEtablissement" placeholder="Ex: Hôtel Téranga..."/></div>
         <div class="form-group"><label>Quartier à Dakar <span class="required">*</span></label>
           <select id="zoneAcheteur"><option value="">Sélectionnez...</option><option>Plateau / Centre-ville</option><option>Médina</option><option>Pikine</option><option>Guédiawaye</option><option>Rufisque</option><option>Grand Yoff</option><option>Almadies / Ngor</option><option>HLM / Liberté</option><option>Parcelles Assainies</option><option>Autre</option></select>
+          <div class="error-msg" id="err-zoneAcheteur">Choisissez votre quartier</div>
         </div>
       </div>
       <div class="btn-row">
@@ -167,17 +171,18 @@
       <div class="security-note">🔒 Votre mot de passe sera <strong>chiffré</strong> — même nous ne pouvons pas le lire.</div>
       <div class="form-group">
         <label>Mot de passe <span class="required">*</span></label>
-        <div class="pwd-wrap"><input type="password" id="password" placeholder="Minimum 6 caractères" oninput="checkPwd(this.value)"/><button class="pwd-toggle" onclick="togglePwd('password',this)" type="button">👁️</button></div>
+        <div class="pwd-wrap"><input type="password" id="password" placeholder="Minimum 6 caractères" oninput="checkPwd(this.value)" autocomplete="new-password"/><button class="pwd-toggle" onclick="togglePwd('password',this)" type="button">👁️</button></div>
         <div class="pwd-bar"><div class="pwd-fill" id="pwdFill"></div></div>
         <div class="pwd-label" id="pwdLabel">Entrez un mot de passe</div>
         <div class="error-msg" id="err-pwd">Minimum 6 caractères</div>
       </div>
       <div class="form-group">
         <label>Confirmer <span class="required">*</span></label>
-        <div class="pwd-wrap"><input type="password" id="password2" placeholder="Répétez votre mot de passe"/><button class="pwd-toggle" onclick="togglePwd('password2',this)" type="button">👁️</button></div>
+        <div class="pwd-wrap"><input type="password" id="password2" placeholder="Répétez votre mot de passe" autocomplete="new-password"/><button class="pwd-toggle" onclick="togglePwd('password2',this)" type="button">👁️</button></div>
         <div class="error-msg" id="err-pwd2">Les mots de passe ne correspondent pas</div>
       </div>
       <div class="cgu"><input type="checkbox" id="cguCheck"/><label for="cguCheck">J'accepte les conditions d'utilisation de Sen Tolbi. Je comprends qu'une commission de <strong>5%</strong> est prélevée sur chaque transaction.</label></div>
+      <div class="error-msg" id="err-cgu">Cochez la case pour accepter les conditions</div>
       <div class="btn-row">
         <button class="btn-secondary" onclick="goStep(2)">← Retour</button>
         <button class="btn-primary" style="margin-top:0" id="btnSubmit" onclick="submitForm()">Créer mon compte 🎉</button>
@@ -210,8 +215,14 @@
 .hamburger-btn.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
 .hamburger-btn.open span:nth-child(2) { opacity: 0; }
 .hamburger-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
-.nav-drawer { position: fixed; top: 0; right: -320px; bottom: 0; width: 300px; background: #3D2B1A; z-index: 999; transition: right .3s ease; display: flex; flex-direction: column; overflow-y: auto; }
-.nav-drawer.open { right: 0; box-shadow: -8px 0 32px rgba(0,0,0,.3); }
+.nav-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 300px; max-width: 85vw; background: #3D2B1A; z-index: 999; transform: translateX(100%); visibility: hidden; transition: transform .3s ease, visibility .3s; display: flex; flex-direction: column; overflow-y: auto; }
+.nav-drawer.open { transform: none; visibility: visible; box-shadow: -8px 0 32px rgba(0,0,0,.3); }
+/* Téléphone (360 px) : barre du haut plus compacte, rien ne dépasse */
+@media (max-width: 480px) {
+  .nav-hamburger { padding: .75rem 1rem; }
+  .nav-logo-icon { width: 30px; height: 30px; font-size: .9rem; }
+  .nav-logo-text { font-size: 1.15rem; }
+}
 .nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 998; backdrop-filter: blur(2px); }
 .nav-overlay.open { display: block; }
 .drawer-header { padding: 1.4rem; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; justify-content: space-between; }
@@ -242,7 +253,7 @@
     <div class="nav-logo-icon">🪣</div>
     <div class="nav-logo-text">Sen <span>Tolbi</span></div>
   </a>
-  <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleDrawer()">
+  <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleDrawer()" aria-label="Ouvrir le menu">
     <span></span><span></span><span></span>
   </button>
 </nav>
@@ -267,13 +278,47 @@ function initNav() {
   buildDrawer();
 }
 
+
+// ===== Outils communs (tâche 6) =====
+// Protège l'affichage des textes saisis par les utilisateurs (prénom, nom…).
+function echapper(t) {
+  return String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Page d'arrivée selon le type de compte.
+function pageDeSonEspace(type) {
+  if (type === 'acheteur') return 'dashboard-acheteur.html';
+  if (type === 'admin') return 'admin.html';
+  return 'dashboard-agriculteur.html';
+}
+
+// Lit le profil dans « utilisateurs » (les règles ne laissent lire que le sien).
+// S'il est introuvable, on se rabat sur le type donné à l'inscription.
+async function lireProfil(authUser) {
+  try {
+    const { data, error } = await window._sb.from('utilisateurs').select('*').eq('id', authUser.id).maybeSingle();
+    if (!error && data) {
+      localStorage.setItem('sentolbi_user', JSON.stringify(data));
+      return data;
+    }
+  } catch (e) { /* réseau : on se rabat ci-dessous */ }
+  const meta = authUser.user_metadata || {};
+  const type = ['vendeur', 'acheteur'].includes(meta.type) ? meta.type : null;
+  return { id: authUser.id, email: authUser.email, prenom: meta.prenom || '', nom: meta.nom || '', type, sansProfil: true };
+}
+
+// La barre du haut ne se fie plus seulement au navigateur : il faut une vraie session.
 async function buildDrawer() {
-  const { data: { session } } = await window._sb.auth.getSession();
-  const user = JSON.parse(localStorage.getItem('sentolbi_user') || '{}');
-  const isLoggedIn = session || user.prenom;
-  const dashLink = user.type === 'acheteur' ? 'dashboard-acheteur.html' : 'dashboard-agriculteur.html';
+  let session = null;
+  try { ({ data: { session } } = await window._sb.auth.getSession()); } catch (e) {}
+  if (!session) localStorage.removeItem('sentolbi_user');
+  let user = session ? JSON.parse(localStorage.getItem('sentolbi_user') || '{}') : {};
+  if (session && !user.type) user = await lireProfil(session.user);
+  const isLoggedIn = !!session;
+  const dashLink = pageDeSonEspace(user.type);
   const name = user.prenom ? (user.prenom + ' ' + (user.nom || '')) : (session?.user?.email || '');
-  const role = user.type === 'acheteur' ? 'Acheteur' : (user.type === 'vendeur' ? 'Vendeur' : '');
+  const role = user.type === 'acheteur' ? 'Acheteur' : (user.type === 'vendeur' ? 'Vendeur' : (user.type === 'admin' ? 'Admin' : ''));
+  const roleLigne = [role, user.zone].filter(Boolean).join(' · ');
 
   const userSection = document.getElementById('drawerUserSection');
   const navSection = document.getElementById('drawerNav');
@@ -283,8 +328,8 @@ async function buildDrawer() {
       <div class="drawer-user">
         <div class="drawer-avatar">${user.type === 'acheteur' ? '🛒' : '👨‍🌾'}</div>
         <div>
-          <div class="drawer-name">${name}</div>
-          <div class="drawer-role">${role} · Dakar</div>
+          <div class="drawer-name">${echapper(name)}</div>
+          <div class="drawer-role">${echapper(roleLigne)}</div>
         </div>
       </div>`;
 
@@ -293,8 +338,6 @@ async function buildDrawer() {
       <a href="index.html" class="drawer-item"><span class="di-icon">🏠</span> Accueil</a>
       <a href="catalogue.html" class="drawer-item"><span class="di-icon">🛒</span> Catalogue produits</a>
       <a href="${dashLink}" class="drawer-item"><span class="di-icon">📊</span> Mon tableau de bord</a>
-      <div class="drawer-divider"></div>
-      <div class="drawer-section">Mon compte</div>
       <div class="drawer-divider"></div>
       <button class="drawer-logout" onclick="logoutNav()">🚪 Se déconnecter</button>`;
   } else {
@@ -314,26 +357,64 @@ async function buildDrawer() {
   }
 }
 
-function toggleDrawer() {
-  const drawer = document.getElementById('navDrawer');
-  const overlay = document.getElementById('navOverlay');
-  const btn = document.getElementById('hamburgerBtn');
-  drawer.classList.toggle('open');
-  overlay.classList.toggle('open');
-  btn.classList.toggle('open');
-}
-
-function closeDrawer() {
-  document.getElementById('navDrawer').classList.remove('open');
-  document.getElementById('navOverlay').classList.remove('open');
-  document.getElementById('hamburgerBtn').classList.remove('open');
-}
-
 async function logoutNav() {
   await window._sb.auth.signOut();
   localStorage.removeItem('sentolbi_user');
   window.location.href = 'index.html';
 }
+
+// ===== Messages d'erreur en français (tâche 6) =====
+// Supabase répond en anglais : on traduit les cas courants, et un message
+// général pour les autres. Le texte anglais n'est jamais montré.
+function traduireErreur(err) {
+  if (!err) return 'Une erreur est survenue. Réessayez dans un instant.';
+  const code = String(err.code || '');
+  const msg = String(err.message || err).toLowerCase();
+  if (code === 'invalid_credentials' || msg.includes('invalid login credentials'))
+    return 'E-mail ou mot de passe incorrect.';
+  if (code === 'email_not_confirmed' || msg.includes('email not confirmed'))
+    return "Votre adresse e-mail n'est pas encore confirmée.";
+  if (code === 'user_already_exists' || code === 'email_exists' || msg.includes('already registered') || msg.includes('already been registered'))
+    return 'Cette adresse e-mail est déjà utilisée. Connectez-vous ou choisissez une autre adresse.';
+  if (code === 'weak_password' || msg.includes('password should'))
+    return 'Mot de passe trop court ou trop simple (au moins 6 caractères).';
+  if (code === 'email_address_invalid' || msg.includes('unable to validate email') || (msg.includes('email') && msg.includes('invalid')))
+    return 'Adresse e-mail invalide.';
+  if (code.startsWith('over_') || err.status === 429 || msg.includes('rate limit') || msg.includes('too many'))
+    return "Trop d'essais en peu de temps. Patientez quelques minutes puis réessayez.";
+  if (err.name === 'AuthRetryableFetchError' || err.status === 0 || msg.includes('load failed') || msg.includes('failed to fetch') || msg.includes('network'))
+    return 'Problème de connexion internet. Vérifiez votre réseau et réessayez.';
+  if (msg.includes('row-level security'))
+    return "Cette action n'est pas autorisée pour ce compte.";
+  return 'Une erreur est survenue. Réessayez dans un instant.';
+}
+
+function afficherAlerte(texte) {
+  const el = document.getElementById('alertError');
+  el.textContent = '❌ ' + texte;
+  el.classList.add('show');
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function cacherAlerte() {
+  const el = document.getElementById('alertError');
+  el.textContent = '';
+  el.classList.remove('show');
+}
+
+// Format d'e-mail simple : quelque@chose.xx
+function emailValide(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e); }
+
+// Si une vraie session existe déjà, on part vers son espace.
+// getUser() vérifie la session auprès de Supabase (évite les boucles avec une session expirée).
+async function redirigerSiDejaConnecte() {
+  try {
+    const { data: { user }, error } = await window._sb.auth.getUser();
+    if (error || !user) return;
+    const profil = await lireProfil(user);
+    if (profil.type) window.location.replace(pageDeSonEspace(profil.type));
+  } catch (e) { /* pas de réseau : on reste sur la page */ }
+}
+
   initNav();
 
   let currentType = 'vendeur', currentStep = 1;
@@ -346,19 +427,46 @@ async function logoutNav() {
     document.getElementById('formAcheteur').style.display = type === 'acheteur' ? 'block' : 'none';
   }
 
-  function goStep(n) {
-    if (n > currentStep && currentStep === 1) {
-      const prenom = document.getElementById('prenom').value.trim();
-      const nom = document.getElementById('nom').value.trim();
+  // Vérifie une étape avant d'avancer ; les messages s'affichent sous le champ concerné.
+  function validerEtape(etape) {
+    let valid = true;
+    const verif = (id, ok, texte) => { showError(id, !ok, texte); if (!ok) valid = false; };
+    if (etape === 1) {
       const email = document.getElementById('email').value.trim();
-      const tel = document.getElementById('tel').value.trim();
-      let valid = true;
-      if (!prenom){showError('prenom',true);valid=false;}else showError('prenom',false);
-      if (!nom){showError('nom',true);valid=false;}else showError('nom',false);
-      if (!email){showError('email',true);valid=false;}else showError('email',false);
-      if (!tel){showError('tel',true);valid=false;}else showError('tel',false);
-      if (!valid) return;
+      const tel = document.getElementById('tel').value;
+      verif('prenom', !!document.getElementById('prenom').value.trim(), 'Obligatoire');
+      verif('nom', !!document.getElementById('nom').value.trim(), 'Obligatoire');
+      verif('email', !!email && emailValide(email), !email ? 'E-mail obligatoire' : 'Adresse e-mail invalide (exemple : nom@gmail.com)');
+      const errTel = erreurTelephone(document.getElementById('countryCode').value, tel);
+      verif('tel', !errTel, errTel);
     }
+    if (etape === 2) {
+      if (currentType === 'vendeur') {
+        verif('typeProduction', !!document.getElementById('typeProduction').value, 'Choisissez votre type de production');
+        verif('zone', !!document.getElementById('zone').value, 'Choisissez votre zone');
+      } else {
+        verif('chipsAcheteur', document.querySelectorAll('#formAcheteur .chip.active').length > 0, 'Choisissez au moins une option');
+        verif('zoneAcheteur', !!document.getElementById('zoneAcheteur').value, 'Choisissez votre quartier');
+      }
+    }
+    return valid;
+  }
+
+  // Téléphone : au Sénégal (+221), 9 chiffres commençant par 7 (mobile) ou 3 (fixe).
+  // Pour les autres pays : entre 6 et 15 chiffres.
+  function chiffresTel(tel) { return tel.replace(/[\s.\-()]/g, ''); }
+  function erreurTelephone(code, tel) {
+    const n = chiffresTel(tel);
+    if (!n) return 'Numéro obligatoire';
+    if (!/^\d+$/.test(n)) return 'Chiffres uniquement, sans indicatif (exemple : 77 123 45 67)';
+    if (code === '+221' && !/^[37]\d{8}$/.test(n)) return 'Numéro sénégalais : 9 chiffres, commençant par 7 ou 3 (exemple : 77 123 45 67)';
+    if (code !== '+221' && (n.length < 6 || n.length > 15)) return 'Numéro invalide';
+    return '';
+  }
+
+  function goStep(n) {
+    cacherAlerte();
+    if (n > currentStep && !validerEtape(currentStep)) return;
     document.getElementById('step'+currentStep).classList.remove('active');
     currentStep = n;
     document.getElementById('step'+n).classList.add('active');
@@ -377,11 +485,11 @@ async function logoutNav() {
     for(let i=1;i<=2;i++) document.getElementById('line'+i).classList.toggle('done',i<currentStep);
   }
 
-  function showError(id,show){
+  function showError(id,show,texte){
     const input=document.getElementById(id);
     const msg=document.getElementById('err-'+id);
     if(input)input.classList.toggle('error',show);
-    if(msg)msg.classList.toggle('show',show);
+    if(msg){ if(texte) msg.textContent=texte; msg.classList.toggle('show',show); }
   }
 
   function checkPwd(val){
@@ -401,29 +509,40 @@ async function logoutNav() {
     btn.textContent=input.type==='password'?'👁️':'🙈';
   }
 
-  function toggleChip(el){el.classList.toggle('active');}
+  function toggleChip(el){el.classList.toggle('active');showError('chipsAcheteur',false);}
 
+  let envoiEnCours = false;
   async function submitForm(){
+    if (envoiEnCours) return;                       // pas de double envoi
+    cacherAlerte();                                 // efface l'ancien message (ex. « Load failed »)
     const pwd=document.getElementById('password').value;
     const pwd2=document.getElementById('password2').value;
     const cgu=document.getElementById('cguCheck').checked;
     let valid=true;
-    if(!pwd||pwd.length<6){showError('pwd',true);valid=false;}else showError('pwd',false);
-    if(pwd!==pwd2){showError('pwd2',true);valid=false;}else showError('pwd2',false);
-    if(!cgu){alert("Veuillez accepter les conditions d'utilisation");return;}
+    if(!pwd||pwd.length<6){showError('pwd',true);document.getElementById('password').classList.add('error');valid=false;}
+    else{showError('pwd',false);document.getElementById('password').classList.remove('error');}
+    if(pwd!==pwd2){showError('pwd2',true);document.getElementById('password2').classList.add('error');valid=false;}
+    else{showError('pwd2',false);document.getElementById('password2').classList.remove('error');}
+    showError('cgu',!cgu); if(!cgu)valid=false;
     if(!valid)return;
+    // Sécurité : on revérifie les étapes 1 et 2 avant d'envoyer.
+    if(!validerEtape(1)){goStep(1);return;}
+    if(!validerEtape(2)){goStep(2);return;}
 
     const btn=document.getElementById('btnSubmit');
-    btn.disabled=true;btn.textContent='Création en cours...';
+    envoiEnCours=true; btn.disabled=true; btn.textContent='Inscription en cours…';
+    const remettreBouton=()=>{envoiEnCours=false;btn.disabled=false;btn.textContent='Créer mon compte 🎉';};
 
     const prenom=document.getElementById('prenom').value.trim();
     const nom=document.getElementById('nom').value.trim();
     const email=document.getElementById('email').value.trim();
     const code=document.getElementById('countryCode').value;
-    const tel=code+document.getElementById('tel').value.trim().replace(/\s/g,'');
+    const tel=code+chiffresTel(document.getElementById('tel').value);
+    // Le type de compte ne peut être que vendeur ou acheteur (jamais admin).
+    const type = currentType === 'acheteur' ? 'acheteur' : 'vendeur';
 
     let zone='',typeProduction='',typeAcheteur='',moyenPaiement='';
-    if(currentType==='vendeur'){
+    if(type==='vendeur'){
       zone=document.getElementById('zone').value;
       typeProduction=document.getElementById('typeProduction').value;
       const paiements=[];
@@ -438,40 +557,56 @@ async function logoutNav() {
       typeAcheteur=Array.from(chips).map(c=>c.textContent.trim()).join(', ');
     }
 
-    const {data:authData,error:authError}=await window._sb.auth.signUp({
-      email,password:pwd,
-      options:{data:{prenom,nom,type:currentType}}
-    });
+    // 1. Création du compte de connexion
+    let res;
+    try { res = await window._sb.auth.signUp({ email, password:pwd, options:{data:{prenom,nom,type}} }); }
+    catch (e) { res = { error: e }; }
+    if (res.error) { afficherAlerte(traduireErreur(res.error)); remettreBouton(); return; }
+    const authData = res.data;
 
-    if(authError){
-      const alertEl=document.getElementById('alertError');
-      alertEl.textContent='❌ '+(authError.message.includes('already registered')?'Cet email est déjà utilisé.':authError.message);
-      alertEl.classList.add('show');
-      btn.disabled=false;btn.textContent='Créer mon compte 🎉';
+    // Si la confirmation d'e-mail est activée dans Supabase, il n'y a pas encore de session :
+    // le profil ne peut pas être enregistré depuis la page (à prévoir avant de la réactiver).
+    if (!authData.session) {
+      afficherAlerte("Votre compte est créé, mais il doit être confirmé avant la première connexion. Ne recréez pas de compte.");
+      remettreBouton();
       return;
     }
 
-    await window._sb.from('utilisateurs').insert([{
-      id:authData.user.id,prenom,nom,telephone:tel,
-      email,mot_de_passe:'🔒 chiffré',
-      type:currentType,zone,
-      type_production:typeProduction||null,
-      type_acheteur:typeAcheteur||null,
-      moyen_paiement:moyenPaiement||null
-    }]);
+    // 2. Enregistrement du profil
+    let erreurProfil = null;
+    try {
+      const { error } = await window._sb.from('utilisateurs').insert([{
+        id:authData.user.id,prenom,nom,telephone:tel,
+        email,mot_de_passe:'🔒 chiffré',
+        type,zone,
+        type_production:typeProduction||null,
+        type_acheteur:typeAcheteur||null,
+        moyen_paiement:moyenPaiement||null
+      }]);
+      erreurProfil = error;
+    } catch (e) { erreurProfil = e; }
+    if (erreurProfil) {
+      afficherAlerte("Votre compte est créé, mais votre profil n'a pas pu être enregistré (" + traduireErreur(erreurProfil) + "). Ne recréez pas de compte : prévenez l'équipe Sen Tolbi.");
+      remettreBouton();
+      return;
+    }
 
     localStorage.setItem('sentolbi_user',JSON.stringify({
-      id:authData.user.id,prenom,nom,email,type:currentType,zone
+      id:authData.user.id,prenom,nom,email,type,zone
     }));
 
+    // 3. Succès : plus aucun message d'erreur affiché
+    cacherAlerte();
+    envoiEnCours=false;
     document.getElementById('stepsNav').style.display='none';
     document.getElementById('step3').classList.remove('active');
     document.getElementById('successScreen').style.display='block';
-    document.getElementById('successMsg').textContent='Bienvenue '+prenom+' ! Votre compte '+currentType+' est créé et sécurisé.';
-    document.getElementById('btnDashboard').onclick=()=>{
-      window.location.href=currentType==='vendeur'?'dashboard-agriculteur.html':'dashboard-acheteur.html';
-    };
+    document.getElementById('successMsg').textContent='Bienvenue '+prenom+' ! Votre compte '+type+' est créé et sécurisé.';
+    document.getElementById('btnDashboard').onclick=()=>{ window.location.href=pageDeSonEspace(type); };
   }
+
+  // Quelqu'un déjà connecté qui ouvre l'inscription retourne dans son espace.
+  redirigerSiDejaConnecte();
 </script>
 </body>
 </html>
