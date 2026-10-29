@@ -239,6 +239,21 @@ async function buildDrawer() {
   }
 }
 
+function toggleDrawer() {
+  const drawer = document.getElementById('navDrawer');
+  const overlay = document.getElementById('navOverlay');
+  const btn = document.getElementById('hamburgerBtn');
+  drawer.classList.toggle('open');
+  overlay.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+function closeDrawer() {
+  document.getElementById('navDrawer').classList.remove('open');
+  document.getElementById('navOverlay').classList.remove('open');
+  document.getElementById('hamburgerBtn').classList.remove('open');
+}
+
 async function logoutNav() {
   await window._sb.auth.signOut();
   localStorage.removeItem('sentolbi_user');
