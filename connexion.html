@@ -34,14 +34,20 @@
     .forgot-link{text-align:right;margin-top:.3rem;}
     .forgot-link a{font-size:.78rem;color:var(--terracotta);text-decoration:none;}
     .alert{padding:.8rem 1rem;border-radius:6px;font-size:.82rem;margin-bottom:1rem;display:none;border-left:3px solid;}
+    .error-msg{font-size:.72rem;color:#D63B3B;margin-top:.25rem;display:none;} .error-msg.show{display:block;}
+    input.error{border-color:#D63B3B;}
     .alert.show{display:block;} .alert-error{background:rgba(214,59,59,.08);border-color:#D63B3B;color:#D63B3B;}
     .btn-primary{width:100%;padding:.95rem;background:var(--terracotta);color:var(--white);border:none;border-radius:6px;border-bottom:3px solid var(--terracotta-dark);font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:1rem;display:flex;align-items:center;justify-content:center;gap:.5rem;}
-    .btn-primary:hover{background:var(--terracotta-dark);transform:translateY(1px);}
+    @media(hover:hover){.btn-primary:hover{background:var(--terracotta-dark);transform:translateY(1px);}}
     .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none;}
     .divider{display:flex;align-items:center;gap:1rem;margin:1.5rem 0;color:#8B6B50;font-size:.78rem;}
     .divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(61,43,26,.1);}
     .security-note{display:flex;align-items:center;gap:.5rem;justify-content:center;margin-top:1.2rem;font-size:.75rem;color:#8B6B50;}
     @media(max-width:500px){.page{margin:1.5rem auto;}}
+    /* iPhone : texte des champs à 16 px, sinon Safari zoome la page au toucher */
+    @media(max-width:600px){input,select,textarea{font-size:16px;}}
+    /* Message affiché pendant la redirection d'un utilisateur déjà connecté */
+    .redir-note{position:fixed;inset:0;z-index:2000;background:var(--cream);display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem;font-size:1rem;color:#6B4F35;}
   </style>
 </head>
 <body>
@@ -58,14 +64,16 @@
     <div class="alert alert-error" id="alertError"></div>
     <div class="form-group">
       <label>Email</label>
-      <input type="email" id="email" placeholder="votre@email.com"/>
+      <input type="email" id="email" placeholder="votre@email.com" autocomplete="email"/>
+      <div class="error-msg" id="err-email"></div>
     </div>
     <div class="form-group">
       <label>Mot de passe</label>
       <div class="pwd-wrap">
-        <input type="password" id="password" placeholder="Votre mot de passe"/>
-        <button class="pwd-toggle" onclick="togglePwd()" type="button">👁️</button>
+        <input type="password" id="password" placeholder="Votre mot de passe" autocomplete="current-password"/>
+        <button class="pwd-toggle" onclick="togglePwd()" type="button" aria-label="Afficher le mot de passe">👁️</button>
       </div>
+      <div class="error-msg" id="err-password"></div>
     </div>
     <button class="btn-primary" id="btnLogin" onclick="login()">Se connecter →</button>
     <div class="divider">ou</div>
@@ -93,8 +101,14 @@
 .hamburger-btn.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
 .hamburger-btn.open span:nth-child(2) { opacity: 0; }
 .hamburger-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
-.nav-drawer { position: fixed; top: 0; right: -320px; bottom: 0; width: 300px; background: #3D2B1A; z-index: 999; transition: right .3s ease; display: flex; flex-direction: column; overflow-y: auto; }
-.nav-drawer.open { right: 0; box-shadow: -8px 0 32px rgba(0,0,0,.3); }
+.nav-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 300px; max-width: 85vw; background: #3D2B1A; z-index: 999; transform: translateX(100%); visibility: hidden; transition: transform .3s ease, visibility .3s; display: flex; flex-direction: column; overflow-y: auto; }
+.nav-drawer.open { transform: none; visibility: visible; box-shadow: -8px 0 32px rgba(0,0,0,.3); }
+/* Téléphone (360 px) : barre du haut plus compacte, rien ne dépasse */
+@media (max-width: 480px) {
+  .nav-hamburger { padding: .75rem 1rem; }
+  .nav-logo-icon { width: 30px; height: 30px; font-size: .9rem; }
+  .nav-logo-text { font-size: 1.15rem; }
+}
 .nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 998; backdrop-filter: blur(2px); }
 .nav-overlay.open { display: block; }
 .drawer-header { padding: 1.4rem; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; justify-content: space-between; }
@@ -125,7 +139,7 @@
     <div class="nav-logo-icon">🪣</div>
     <div class="nav-logo-text">Sen <span>Tolbi</span></div>
   </a>
-  <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleDrawer()">
+  <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleDrawer()" aria-label="Ouvrir le menu">
     <span></span><span></span><span></span>
   </button>
 </nav>
@@ -150,13 +164,47 @@ function initNav() {
   buildDrawer();
 }
 
+
+// ===== Outils communs (tâche 6) =====
+// Protège l'affichage des textes saisis par les utilisateurs (prénom, nom…).
+function echapper(t) {
+  return String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Page d'arrivée selon le type de compte.
+function pageDeSonEspace(type) {
+  if (type === 'acheteur') return 'dashboard-acheteur.html';
+  if (type === 'admin') return 'admin.html';
+  return 'dashboard-agriculteur.html';
+}
+
+// Lit le profil dans « utilisateurs » (les règles ne laissent lire que le sien).
+// S'il est introuvable, on se rabat sur le type donné à l'inscription.
+async function lireProfil(authUser) {
+  try {
+    const { data, error } = await window._sb.from('utilisateurs').select('*').eq('id', authUser.id).maybeSingle();
+    if (!error && data) {
+      localStorage.setItem('sentolbi_user', JSON.stringify(data));
+      return data;
+    }
+  } catch (e) { /* réseau : on se rabat ci-dessous */ }
+  const meta = authUser.user_metadata || {};
+  const type = ['vendeur', 'acheteur'].includes(meta.type) ? meta.type : null;
+  return { id: authUser.id, email: authUser.email, prenom: meta.prenom || '', nom: meta.nom || '', type, sansProfil: true };
+}
+
+// La barre du haut ne se fie plus seulement au navigateur : il faut une vraie session.
 async function buildDrawer() {
-  const { data: { session } } = await window._sb.auth.getSession();
-  const user = JSON.parse(localStorage.getItem('sentolbi_user') || '{}');
-  const isLoggedIn = session || user.prenom;
-  const dashLink = user.type === 'acheteur' ? 'dashboard-acheteur.html' : 'dashboard-agriculteur.html';
+  let session = null;
+  try { ({ data: { session } } = await window._sb.auth.getSession()); } catch (e) {}
+  if (!session) localStorage.removeItem('sentolbi_user');
+  let user = session ? JSON.parse(localStorage.getItem('sentolbi_user') || '{}') : {};
+  if (session && !user.type) user = await lireProfil(session.user);
+  const isLoggedIn = !!session;
+  const dashLink = pageDeSonEspace(user.type);
   const name = user.prenom ? (user.prenom + ' ' + (user.nom || '')) : (session?.user?.email || '');
-  const role = user.type === 'acheteur' ? 'Acheteur' : (user.type === 'vendeur' ? 'Vendeur' : '');
+  const role = user.type === 'acheteur' ? 'Acheteur' : (user.type === 'vendeur' ? 'Vendeur' : (user.type === 'admin' ? 'Admin' : ''));
+  const roleLigne = [role, user.zone].filter(Boolean).join(' · ');
 
   const userSection = document.getElementById('drawerUserSection');
   const navSection = document.getElementById('drawerNav');
@@ -166,8 +214,8 @@ async function buildDrawer() {
       <div class="drawer-user">
         <div class="drawer-avatar">${user.type === 'acheteur' ? '🛒' : '👨‍🌾'}</div>
         <div>
-          <div class="drawer-name">${name}</div>
-          <div class="drawer-role">${role} · Dakar</div>
+          <div class="drawer-name">${echapper(name)}</div>
+          <div class="drawer-role">${echapper(roleLigne)}</div>
         </div>
       </div>`;
 
@@ -176,8 +224,6 @@ async function buildDrawer() {
       <a href="index.html" class="drawer-item"><span class="di-icon">🏠</span> Accueil</a>
       <a href="catalogue.html" class="drawer-item"><span class="di-icon">🛒</span> Catalogue produits</a>
       <a href="${dashLink}" class="drawer-item"><span class="di-icon">📊</span> Mon tableau de bord</a>
-      <div class="drawer-divider"></div>
-      <div class="drawer-section">Mon compte</div>
       <div class="drawer-divider"></div>
       <button class="drawer-logout" onclick="logoutNav()">🚪 Se déconnecter</button>`;
   } else {
@@ -217,6 +263,65 @@ async function logoutNav() {
   localStorage.removeItem('sentolbi_user');
   window.location.href = 'index.html';
 }
+
+// ===== Messages d'erreur en français (tâche 6) =====
+// Supabase répond en anglais : on traduit les cas courants, et un message
+// général pour les autres. Le texte anglais n'est jamais montré.
+function traduireErreur(err) {
+  if (!err) return 'Une erreur est survenue. Réessayez dans un instant.';
+  const code = String(err.code || '');
+  const msg = String(err.message || err).toLowerCase();
+  if (code === 'invalid_credentials' || msg.includes('invalid login credentials'))
+    return 'E-mail ou mot de passe incorrect.';
+  if (code === 'email_not_confirmed' || msg.includes('email not confirmed'))
+    return "Votre adresse e-mail n'est pas encore confirmée.";
+  if (code === 'user_already_exists' || code === 'email_exists' || msg.includes('already registered') || msg.includes('already been registered'))
+    return 'Cette adresse e-mail est déjà utilisée. Connectez-vous ou choisissez une autre adresse.';
+  if (code === 'weak_password' || msg.includes('password should'))
+    return 'Mot de passe trop court ou trop simple (au moins 6 caractères).';
+  if (code === 'email_address_invalid' || msg.includes('unable to validate email') || (msg.includes('email') && msg.includes('invalid')))
+    return 'Adresse e-mail invalide.';
+  if (code.startsWith('over_') || err.status === 429 || msg.includes('rate limit') || msg.includes('too many'))
+    return "Trop d'essais en peu de temps. Patientez quelques minutes puis réessayez.";
+  if (err.name === 'AuthRetryableFetchError' || err.status === 0 || msg.includes('load failed') || msg.includes('failed to fetch') || msg.includes('network'))
+    return 'Problème de connexion internet. Vérifiez votre réseau et réessayez.';
+  if (msg.includes('row-level security'))
+    return "Cette action n'est pas autorisée pour ce compte.";
+  return 'Une erreur est survenue. Réessayez dans un instant.';
+}
+
+function afficherAlerte(texte) {
+  const el = document.getElementById('alertError');
+  el.textContent = '❌ ' + texte;
+  el.classList.add('show');
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function cacherAlerte() {
+  const el = document.getElementById('alertError');
+  el.textContent = '';
+  el.classList.remove('show');
+}
+
+// Format d'e-mail simple : quelque@chose.xx
+function emailValide(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e); }
+
+// Si une vraie session existe déjà, on part vers son espace.
+// getUser() vérifie la session auprès de Supabase (évite les boucles avec une session expirée).
+async function redirigerSiDejaConnecte() {
+  try {
+    const { data: { user }, error } = await window._sb.auth.getUser();
+    if (error || !user) return;
+    // Message pendant la vérification du profil (évite de voir le formulaire 1 à 2 s)
+    const note = document.createElement('div');
+    note.className = 'redir-note';
+    note.textContent = 'Vous êtes déjà connecté(e). Redirection vers votre espace…';
+    document.body.appendChild(note);
+    const profil = await lireProfil(user);
+    if (!profil.type) note.remove();
+    if (profil.type) window.location.replace(pageDeSonEspace(profil.type));
+  } catch (e) { /* pas de réseau : on reste sur la page */ }
+}
+
   initNav();
 
   let userType = 'vendeur';
@@ -233,41 +338,50 @@ async function logoutNav() {
     btn.textContent=input.type==='password'?'👁️':'🙈';
   }
 
+  function erreurChamp(id, texte) {
+    const input = document.getElementById(id);
+    const msg = document.getElementById('err-' + id);
+    input.classList.toggle('error', !!texte);
+    msg.textContent = texte || '';
+    msg.classList.toggle('show', !!texte);
+  }
+
+  // Le choix Vendeur / Acheteur n'est plus bloquant : c'est le type enregistré
+  // dans le compte qui décide de la page d'arrivée.
   async function login(){
     const email=document.getElementById('email').value.trim();
     const pwd=document.getElementById('password').value;
-    const alertEl=document.getElementById('alertError');
     const btn=document.getElementById('btnLogin');
-    if(!email||!pwd){alertEl.textContent='❌ Veuillez remplir tous les champs.';alertEl.classList.add('show');return;}
-    btn.disabled=true;btn.textContent='Connexion en cours...';
-    alertEl.classList.remove('show');
+    if (btn.disabled) return;                       // pas de double envoi
+    cacherAlerte();
+    erreurChamp('email', !email ? 'E-mail obligatoire.' : (!emailValide(email) ? 'Adresse e-mail invalide (exemple : nom@gmail.com).' : ''));
+    erreurChamp('password', !pwd ? 'Mot de passe obligatoire.' : '');
+    if (!email || !emailValide(email) || !pwd) return;
 
-    const {data,error}=await window._sb.auth.signInWithPassword({email,password:pwd});
-    if(error){
-      alertEl.textContent='❌ Email ou mot de passe incorrect.';
-      alertEl.classList.add('show');
-      btn.disabled=false;btn.textContent='Se connecter →';
+    btn.disabled=true; btn.textContent='Connexion en cours…';
+    const remettreBouton=()=>{btn.disabled=false;btn.textContent='Se connecter →';};
+
+    let res;
+    try { res = await window._sb.auth.signInWithPassword({email,password:pwd}); }
+    catch (e) { res = { error: e }; }
+    if (res.error) { afficherAlerte(traduireErreur(res.error)); remettreBouton(); return; }
+
+    const profil = await lireProfil(res.data.user);
+    if (!profil.type) {
+      afficherAlerte("Votre compte n'a pas de profil complet. Prévenez l'équipe Sen Tolbi.");
+      await window._sb.auth.signOut();
+      localStorage.removeItem('sentolbi_user');
+      remettreBouton();
       return;
     }
-
-    const {data:profil}=await window._sb.from('utilisateurs').select('*').eq('id',data.user.id).single();
-
-    if(profil){
-      // Vérifier le type
-      if(profil.type!==userType){
-        alertEl.textContent='❌ Ce compte est un compte '+profil.type+'. Choisissez le bon type de compte.';
-        alertEl.classList.add('show');
-        await window._sb.auth.signOut();
-        btn.disabled=false;btn.textContent='Se connecter →';
-        return;
-      }
-      localStorage.setItem('sentolbi_user',JSON.stringify(profil));
-      window.location.href=profil.type==='vendeur'?'dashboard-agriculteur.html':'dashboard-acheteur.html';
-    } else {
-      localStorage.setItem('sentolbi_user',JSON.stringify({id:data.user.id,email,type:userType}));
-      window.location.href=userType==='vendeur'?'dashboard-agriculteur.html':'dashboard-acheteur.html';
-    }
+    if (profil.sansProfil) localStorage.setItem('sentolbi_user', JSON.stringify(profil));
+    window.location.href = pageDeSonEspace(profil.type);
   }
+
+  // Touche Entrée = se connecter
+  ['email','password'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') login(); }));
+
+  redirigerSiDejaConnecte();
 
 </script>
 </body>
