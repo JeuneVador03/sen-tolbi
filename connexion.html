@@ -38,12 +38,16 @@
     input.error{border-color:#D63B3B;}
     .alert.show{display:block;} .alert-error{background:rgba(214,59,59,.08);border-color:#D63B3B;color:#D63B3B;}
     .btn-primary{width:100%;padding:.95rem;background:var(--terracotta);color:var(--white);border:none;border-radius:6px;border-bottom:3px solid var(--terracotta-dark);font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:1rem;display:flex;align-items:center;justify-content:center;gap:.5rem;}
-    .btn-primary:hover{background:var(--terracotta-dark);transform:translateY(1px);}
+    @media(hover:hover){.btn-primary:hover{background:var(--terracotta-dark);transform:translateY(1px);}}
     .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none;}
     .divider{display:flex;align-items:center;gap:1rem;margin:1.5rem 0;color:#8B6B50;font-size:.78rem;}
     .divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(61,43,26,.1);}
     .security-note{display:flex;align-items:center;gap:.5rem;justify-content:center;margin-top:1.2rem;font-size:.75rem;color:#8B6B50;}
     @media(max-width:500px){.page{margin:1.5rem auto;}}
+    /* iPhone : texte des champs à 16 px, sinon Safari zoome la page au toucher */
+    @media(max-width:600px){input,select,textarea{font-size:16px;}}
+    /* Message affiché pendant la redirection d'un utilisateur déjà connecté */
+    .redir-note{position:fixed;inset:0;z-index:2000;background:var(--cream);display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem;font-size:1rem;color:#6B4F35;}
   </style>
 </head>
 <body>
@@ -307,7 +311,13 @@ async function redirigerSiDejaConnecte() {
   try {
     const { data: { user }, error } = await window._sb.auth.getUser();
     if (error || !user) return;
+    // Message pendant la vérification du profil (évite de voir le formulaire 1 à 2 s)
+    const note = document.createElement('div');
+    note.className = 'redir-note';
+    note.textContent = 'Vous êtes déjà connecté(e). Redirection vers votre espace…';
+    document.body.appendChild(note);
     const profil = await lireProfil(user);
+    if (!profil.type) note.remove();
     if (profil.type) window.location.replace(pageDeSonEspace(profil.type));
   } catch (e) { /* pas de réseau : on reste sur la page */ }
 }
