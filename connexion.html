@@ -378,6 +378,9 @@ async function redirigerSiDejaConnecte() {
     window.location.href = pageDeSonEspace(profil.type);
   }
 
+  // Le message rouge d'un champ disparaît dès qu'on le corrige.
+  ['email','password'].forEach(id => document.getElementById(id).addEventListener('input', () => erreurChamp(id, '')));
+
   // Touche Entrée = se connecter
   ['email','password'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') login(); }));
 
