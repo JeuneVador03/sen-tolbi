@@ -42,7 +42,6 @@
     .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none;}
     .divider{display:flex;align-items:center;gap:1rem;margin:1.5rem 0;color:#8B6B50;font-size:.78rem;}
     .divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(61,43,26,.1);}
-    .security-note{display:flex;align-items:center;gap:.5rem;justify-content:center;margin-top:1.2rem;font-size:.75rem;color:#8B6B50;}
     @media(max-width:500px){.page{margin:1.5rem auto;}}
     /* iPhone : texte des champs à 16 px, sinon Safari zoome la page au toucher */
     @media(max-width:600px){input,select,textarea{font-size:16px;}}
@@ -82,7 +81,6 @@
       <a href="inscription.html" style="color:var(--terracotta);font-weight:600;text-decoration:none;">Créer un compte gratuitement →</a>
     </div>
   </div>
-  <div class="security-note">🔒 Connexion sécurisée · Mot de passe chiffré</div>
 </div>
 
 <script>
@@ -377,6 +375,9 @@ async function redirigerSiDejaConnecte() {
     if (profil.sansProfil) localStorage.setItem('sentolbi_user', JSON.stringify(profil));
     window.location.href = pageDeSonEspace(profil.type);
   }
+
+  // Le message rouge d'un champ disparaît dès qu'on le corrige.
+  ['email','password'].forEach(id => document.getElementById(id).addEventListener('input', () => erreurChamp(id, '')));
 
   // Touche Entrée = se connecter
   ['email','password'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') login(); }));
