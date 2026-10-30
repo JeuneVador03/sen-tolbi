@@ -2,6 +2,7 @@
 -- Sen Tolbi · Tâche 11 · Commande complète (stock, produits retirés, livraison)
 -- À coller en entier dans Supabase > SQL Editor, puis Run.
 -- Tout est entre begin et commit : si une ligne échoue, rien n'est appliqué.
+-- À lancer une seule fois (les colonnes ne doivent pas déjà exister).
 -- Retour en arrière : 2026-10-30-t11-retour-arriere.sql
 -- =====================================================================
 begin;
@@ -16,11 +17,10 @@ begin;
 --    permet déjà au vendeur de changer cette colonne sur ses seuls produits.
 -- ---------------------------------------------------------------------
 alter table public.produits
-  add column if not exists en_vente boolean not null default true;
+  add column en_vente boolean not null default true;
 
 -- Filet de sécurité : le stock ne peut jamais être négatif, même si
 -- quelqu'un modifie la quantité à la main.
-alter table public.produits drop constraint if exists produits_quantite_positive;
 alter table public.produits
   add constraint produits_quantite_positive check (quantite >= 0);
 
@@ -35,11 +35,10 @@ alter table public.produits
 --    Les visiteurs (non connectés) n'ont aucune règle sur commandes : rien.
 -- ---------------------------------------------------------------------
 alter table public.commandes
-  add column if not exists mode_livraison    text,
-  add column if not exists adresse_livraison text,
-  add column if not exists note_acheteur     text;
+  add column mode_livraison    text,
+  add column adresse_livraison text,
+  add column note_acheteur     text;
 
-alter table public.commandes drop constraint if exists commandes_mode_livraison_check;
 alter table public.commandes
   add constraint commandes_mode_livraison_check
   check (mode_livraison in ('livraison', 'retrait'));

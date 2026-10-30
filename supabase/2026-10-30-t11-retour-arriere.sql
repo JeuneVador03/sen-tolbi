@@ -38,14 +38,14 @@ end;
 $$;
 
 -- 2. Retirer les colonnes de livraison.
-alter table public.commandes drop constraint if exists commandes_mode_livraison_check;
+alter table public.commandes drop constraint commandes_mode_livraison_check;
 alter table public.commandes
-  drop column if exists mode_livraison,
-  drop column if exists adresse_livraison,
-  drop column if exists note_acheteur;
+  drop column mode_livraison,
+  drop column adresse_livraison,
+  drop column note_acheteur;
 
 -- 3. Retirer la colonne « en_vente » et le filet « stock jamais négatif ».
-alter table public.produits drop constraint if exists produits_quantite_positive;
-alter table public.produits drop column if exists en_vente;
+alter table public.produits drop constraint produits_quantite_positive;
+alter table public.produits drop column en_vente;
 
 commit;
