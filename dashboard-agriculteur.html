@@ -64,15 +64,29 @@
     .product-name{font-weight:500;font-size:.9rem;color:var(--baobab);overflow-wrap:anywhere;}
     .product-meta{font-size:.75rem;color:#8B6B50;margin-top:.15rem;}
     .product-price{font-family:'Playfair Display',serif;font-weight:700;font-size:1rem;color:var(--terracotta);white-space:nowrap;}
-    .product-actions{display:flex;gap:.4rem;}
+    .product-actions{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;}
     .btn-icon{width:36px;height:36px;border-radius:5px;border:1px solid rgba(61,43,26,.15);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:all .15s;}
     .btn-icon:disabled{opacity:.5;cursor:wait;}
     .btn-text{padding:.45rem .8rem;border-radius:5px;border:1px solid rgba(61,43,26,.2);background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;color:var(--baobab);}
-    .tag-retire{display:inline-block;font-size:.68rem;font-weight:600;padding:.1rem .45rem;border-radius:10px;background:rgba(61,43,26,.08);color:#6B4F35;margin-left:.3rem;}
+    .btn-text:disabled{opacity:.5;cursor:wait;}
+    .tag-retire,.tag-epuise{display:inline-block;font-size:.68rem;font-weight:600;padding:.1rem .45rem;border-radius:10px;margin-left:.3rem;white-space:nowrap;vertical-align:middle;}
+    .tag-retire{background:rgba(61,43,26,.12);color:#5A3F28;}
+    .tag-epuise{background:rgba(214,59,59,.12);color:var(--error);}
+    .product-item.est-retire .product-emoji,.product-item.est-retire .product-name{opacity:.6;}
+    .stock-val{font-weight:600;color:var(--baobab);}
+    .stock-val.zero{color:var(--error);}
+    /* Modifier le stock : petit formulaire sous la ligne du produit */
+    .stock-edit{flex-basis:100%;background:var(--cream);border-radius:6px;padding:.8rem .9rem;}
+    .stock-edit[hidden]{display:none;}
+    .stock-edit label{margin-bottom:.4rem;}
+    .stock-edit-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
+    .stock-edit input{width:9rem;font-size:16px;}
+    .stock-edit .btn-save,.stock-edit .btn-cancel{flex:0 0 auto;padding:.6rem 1rem;font-size:.85rem;}
     /* Message lié à un produit (ex. suppression impossible), affiché sous la ligne */
     .item-msg{flex-basis:100%;display:flex;gap:.6rem;align-items:flex-start;padding:.7rem .9rem;border-radius:6px;font-size:.82rem;line-height:1.5;border-left:3px solid;}
     .item-msg[hidden]{display:none;}
     .item-msg.error{background:rgba(214,59,59,.08);border-color:var(--error);color:var(--error);}
+    .item-msg.info{background:rgba(212,146,42,.1);border-color:var(--gold);color:#6B4510;}
     .item-msg .msg-text{flex:1;}
     .item-msg .msg-close{background:none;border:none;color:inherit;font-size:1rem;cursor:pointer;line-height:1;padding:.1rem .2rem;}
     .item-msg .btn-text{margin-top:.5rem;display:inline-block;}
@@ -158,6 +172,9 @@
       .toast{bottom:calc(4.8rem + env(safe-area-inset-bottom));}
       .product-item{gap:.7rem;}
       .product-price{font-size:.92rem;}
+      /* Boutons du produit sur une ligne à part, assez grands pour le doigt */
+      .product-actions{flex-basis:100%;flex-wrap:wrap;}
+      .product-actions .btn-text{min-height:38px;}
     }
     @media(max-width:380px){
       .form-row-2{grid-template-columns:1fr;gap:0;}
@@ -290,16 +307,10 @@
 
   const emojis={'Légumes':'🥬','Fruits':'🍎','Céréales':'🌾','Légumineuses':'🥜','Viande / Volaille':'🥩','Produits laitiers':'🥛','Épices':'🌿'};
 
-  // ===== À activer après la tâche 11 d'ELO =====
-  // Tant que « actif » vaut false, rien n'est demandé à la base ni affiché.
-  // Quand ELO a ajouté la colonne : vérifier son nom exact avec elle, le mettre dans « colonne », puis passer « actif » à true.
-  // Les noms ci-dessous sont des propositions, PAS les vrais noms (ils n'existent pas encore).
-  const APRES_TACHE_11 = {
-    livraison: { actif:false, colonne:'mode_livraison' },    // table commandes
-    adresse:   { actif:false, colonne:'adresse_livraison' }, // table commandes
-    note:      { actif:false, colonne:'note_acheteur' },     // table commandes
-    retrait:   { actif:false, colonne:'retire' }             // table produits : true = retiré du catalogue
-  };
+  // Colonnes ajoutées par la tâche 11 d'ELO (script supabase/2026-10-30-t11-commande-complete.sql) :
+  //   produits.en_vente (true = visible dans le catalogue), produits.quantite (baisse à chaque commande, jamais < 0)
+  //   commandes.mode_livraison ('livraison' ou 'retrait'), commandes.adresse_livraison, commandes.note_acheteur
+  const MODES_LIVRAISON={ livraison:'🚚 Livraison à domicile', retrait:'🏠 Retrait chez le producteur' };
 
   // Libellés des statuts de commande. La base n'écrit aujourd'hui que « en_attente ».
   const STATUTS={ en_attente:'En attente' };
@@ -313,6 +324,7 @@
     return String(t ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
   function fcfa(n){ return Math.round(Number(n)||0).toLocaleString('fr-FR')+' FCFA'; }
+  function nombre(n){ return (Number(n)||0).toLocaleString('fr-FR'); }
   // Date et heure d'une commande, toujours affichées à l'heure de Dakar (même vue depuis la France).
   // La base enregistre l'heure en UTC : si le texte reçu ne précise pas le fuseau, on indique que c'est de l'UTC.
   function dateFr(d){
@@ -331,9 +343,12 @@
     if(type==='admin') return 'admin.html';
     return 'dashboard-agriculteur.html';
   }
+  function produitParId(id){ return mesProduits.find(p=>String(p.id)===String(id)); }
+  function estEnVente(p){ return p.en_vente!==false; }            // ancienne ligne sans valeur = en vente
+  function stockDe(p){ return Math.max(0,parseInt(p.quantite,10)||0); }
 
   // Traduit les erreurs de la base en français compréhensible.
-  // « action » : 'ajout', 'modification', 'suppression' ou 'lecture'.
+  // « action » : 'ajout', 'modification', 'retrait', 'remise', 'stock', 'suppression' ou 'lecture'.
   function messageErreur(error,action){
     const code=error && error.code;
     const texte=String((error && (error.message||error)) || '').toLowerCase();
@@ -346,9 +361,15 @@
       return "Votre compte n'a pas l'autorisation de faire cette action sur ce produit.";
     }
     if(code==='23503') return "Ce produit a déjà été commandé : il ne peut pas être supprimé, car les commandes reçues doivent garder sa trace.";
+    if(action==='stock' && (code==='23514' || code==='22P02' || code==='22003'))
+      return "Ce stock n'est pas accepté : indiquez un nombre entier, 0 ou plus.";
     if(code==='23514' || code==='22P02' || code==='23502')
       return "Une des valeurs saisies n'est pas acceptée. Vérifiez le prix et la quantité (nombres entiers supérieurs à 0).";
-    const verbe={ajout:"publier le produit",modification:"modifier le produit",suppression:"supprimer le produit",lecture:"charger les informations"}[action]||"terminer l'action";
+    const verbe={
+      ajout:"publier le produit", modification:"modifier le produit",
+      retrait:"retirer le produit du catalogue", remise:"remettre le produit en vente",
+      stock:"modifier le stock", suppression:"supprimer le produit", lecture:"charger les informations"
+    }[action]||"terminer l'action";
     return "Impossible de "+verbe+". Réessayez dans un instant."+(code?" (code "+code+")":"");
   }
 
@@ -406,10 +427,7 @@
     }
 
     mesProduits=data||[];
-    const retraitActif=APRES_TACHE_11.retrait.actif;
-    const enLigne=retraitActif?mesProduits.filter(p=>!p[APRES_TACHE_11.retrait.colonne]).length:mesProduits.length;
-    document.getElementById('statProduits').textContent=enLigne;
-    document.getElementById('statProduitsLabel').textContent=enLigne===0?'Aucun produit publié':enLigne+' produit(s) visible(s) par les acheteurs';
+    afficherStatsProduits();
 
     const g2=document.getElementById('g2');
     const aDesProduits=mesProduits.length>0;
@@ -421,42 +439,74 @@
       return;
     }
     container.innerHTML=mesProduits.map(ligneProduit).join('');
+    brancherChampsStock();
+  }
+
+  // Le catalogue n'affiche que les produits en vente avec un stock supérieur à 0.
+  function afficherStatsProduits(){
+    const visibles=mesProduits.filter(p=>estEnVente(p) && stockDe(p)>0).length;
+    const retires=mesProduits.filter(p=>!estEnVente(p)).length;
+    const epuises=mesProduits.filter(p=>estEnVente(p) && stockDe(p)===0).length;
+    document.getElementById('statProduits').textContent=visibles;
+    const details=[];
+    if(retires) details.push(retires+' retiré(s) du catalogue');
+    if(epuises) details.push(epuises+' épuisé(s)');
+    let label=visibles===0?'Aucun produit visible par les acheteurs':visibles+' produit(s) visible(s) par les acheteurs';
+    if(mesProduits.length===0) label='Aucun produit publié';
+    document.getElementById('statProduitsLabel').textContent=label+(details.length?' · '+details.join(' · '):'');
   }
 
   function ligneProduit(p){
     const id=echapper(p.id);
-    const retraitActif=APRES_TACHE_11.retrait.actif;
-    const retire=retraitActif && !!p[APRES_TACHE_11.retrait.colonne];
-    const boutonVente=retraitActif
-      ? `<button class="btn-text" onclick="changerVente('${id}',${!retire})">${retire?'Remettre en vente':'Retirer du catalogue'}</button>`
-      : '';
+    const enVente=estEnVente(p);
+    const stock=stockDe(p);
+    const unite=echapper(p.unite);
+    const badges=(stock===0?'<span class="tag-epuise">Épuisé</span>':'')
+      +(!enVente?'<span class="tag-retire">Retiré du catalogue</span>':'');
     return `
-      <div class="product-item" id="prod-${id}">
+      <div class="product-item${enVente?'':' est-retire'}" id="prod-${id}">
         <div class="product-emoji">${emojis[p.categorie]||'🌿'}</div>
         <div class="product-info">
-          <div class="product-name">${echapper(p.nom)}${retire?'<span class="tag-retire">Retiré</span>':''}</div>
-          <div class="product-meta">${echapper(p.categorie)} · ${echapper(p.quantite)} ${echapper(p.unite)} disponibles</div>
+          <div class="product-name">${echapper(p.nom)}${badges}</div>
+          <div class="product-meta">${echapper(p.categorie)} · Stock : <span class="stock-val${stock===0?' zero':''}" id="stockval-${id}">${nombre(stock)} ${unite}</span></div>
         </div>
-        <div class="product-price">${(parseInt(p.prix)||0).toLocaleString('fr-FR')} F/${echapper(p.unite)}</div>
-        <div class="product-actions">${boutonVente}<button class="btn-icon" onclick="deleteProduct('${id}')" title="Supprimer" aria-label="Supprimer ${echapper(p.nom)}">🗑️</button></div>
+        <div class="product-price">${(parseInt(p.prix)||0).toLocaleString('fr-FR')} F/${unite}</div>
+        <div class="product-actions">
+          <button class="btn-text btn-vente" onclick="changerVente('${id}',${enVente})">${enVente?'Retirer du catalogue':'Remettre en vente'}</button>
+          <button class="btn-text btn-stock" onclick="ouvrirStock('${id}')" aria-controls="stock-${id}">✏️ Modifier le stock</button>
+          <button class="btn-icon" onclick="deleteProduct('${id}')" title="Supprimer" aria-label="Supprimer ${echapper(p.nom)}">🗑️</button>
+        </div>
+        <div class="stock-edit" id="stock-${id}" hidden>
+          <label for="stockinput-${id}">Nouveau stock (en ${unite})</label>
+          <div class="stock-edit-row">
+            <input type="number" id="stockinput-${id}" data-produit="${id}" min="0" step="1" inputmode="numeric" />
+            <button class="btn-save" id="stocksave-${id}" onclick="enregistrerStock('${id}')">Enregistrer</button>
+            <button class="btn-cancel" onclick="fermerStock('${id}')">Annuler</button>
+          </div>
+          <div class="error-msg" id="err-stock-${id}">Stock : nombre entier, 0 ou plus (sans virgule ni signe moins).</div>
+        </div>
         <div class="item-msg error" id="msg-${id}" hidden></div>
       </div>`;
   }
 
   // Message affiché juste sous le produit concerné, et amené à l'écran.
-  function messageProduit(id,html){
+  function messageProduit(id,html,type){
     const el=document.getElementById('msg-'+id);
     if(!el){ showAlert('error','❌ '+html.replace(/<[^>]+>/g,'')); return; }
-    el.innerHTML=`<span>❌</span><div class="msg-text">${html}</div><button class="msg-close" onclick="this.parentElement.hidden=true" aria-label="Fermer">✕</button>`;
+    const info=type==='info';
+    el.className='item-msg '+(info?'info':'error');
+    el.setAttribute('role',info?'status':'alert');
+    el.innerHTML=`<span>${info?'ℹ️':'❌'}</span><div class="msg-text">${html}</div><button class="msg-close" onclick="this.parentElement.hidden=true" aria-label="Fermer">✕</button>`;
     el.hidden=false;
     el.scrollIntoView({behavior:'smooth',block:'center'});
   }
   function cacherMessageProduit(id){ const el=document.getElementById('msg-'+id); if(el) el.hidden=true; }
 
-  // ===== 5 et 6. Supprimer un produit =====
+  // ===== Supprimer un produit (seulement s'il n'a jamais été commandé) =====
   async function deleteProduct(id){
     cacherMessageProduit(id);
-    if(!confirm('Supprimer ce produit ?'))return;
+    const p=produitParId(id);
+    if(!confirm(`Supprimer définitivement « ${p?p.nom:'ce produit'} » ?\n\nPossible seulement s'il n'a jamais été commandé.`))return;
     const ligne=document.getElementById('prod-'+id);
     const btn=ligne?ligne.querySelector('.btn-icon'):null;
     if(btn) btn.disabled=true;
@@ -464,12 +514,13 @@
       // a) Le produit a-t-il déjà été commandé ? (le vendeur peut lire ses commandes)
       const {count,error:errCompte}=await window._sb.from('commandes').select('id',{count:'exact',head:true}).eq('produit_id',id);
       if(errCompte){ messageProduit(id,echapper(messageErreur(errCompte,'suppression'))); return; }
-      if(count>0){ messageProduit(id,messageDejaCommande(id,count)); return; }
+      if(count>0){ messageProduit(id,messageDejaCommande(id,count),'info'); return; }
 
       // b) Suppression, en vérifiant qu'une ligne a vraiment été supprimée
       const {data,error}=await window._sb.from('produits').delete().eq('id',id).select('id');
       if(error){
-        messageProduit(id,error.code==='23503'?messageDejaCommande(id,0):echapper(messageErreur(error,'suppression')));
+        if(error.code==='23503') messageProduit(id,messageDejaCommande(id,0),'info');
+        else messageProduit(id,echapper(messageErreur(error,'suppression')));
         return;
       }
       if(!data || data.length===0){
@@ -485,44 +536,145 @@
     }
   }
 
+  // Produit déjà commandé : on propose de le retirer du catalogue à la place.
   function messageDejaCommande(id,count){
     const combien=count>1?` (${count} commandes)`:'';
     let html=`Ce produit a déjà été commandé${combien} : il ne peut pas être supprimé, car les commandes reçues doivent garder sa trace.`;
-    // Après la tâche 11 d'ELO : on propose de le retirer du catalogue à la place.
-    if(APRES_TACHE_11.retrait.actif){
-      html+=`<br/><button class="btn-text" onclick="changerVente('${echapper(id)}',true)">Retirer du catalogue</button>`;
+    const p=produitParId(id);
+    if(p && !estEnVente(p)){
+      html+=`<br/>Il est déjà retiré du catalogue : les acheteurs ne le voient plus.`;
+    }else{
+      html+=`<br/>Vous pouvez le retirer du catalogue : les acheteurs ne le verront plus, et ses commandes restent visibles ici.<br/><button class="btn-text" onclick="changerVente('${echapper(id)}',true)">Retirer du catalogue</button>`;
     }
     return html;
   }
 
-  // ===== Après la tâche 11 d'ELO : retirer du catalogue / remettre en vente =====
-  // N'est appelée que si APRES_TACHE_11.retrait.actif vaut true (aucun bouton sinon).
+  // ===== Retirer du catalogue / remettre en vente (colonne en_vente) =====
   async function changerVente(id,retirer){
-    if(!APRES_TACHE_11.retrait.actif) return;
     cacherMessageProduit(id);
+    const p=produitParId(id);
+    const nom=p?p.nom:'ce produit';
+    let question;
+    if(retirer){
+      question=`Retirer « ${nom} » du catalogue ?\n\nLes acheteurs ne le verront plus et ne pourront plus le commander. Les commandes déjà reçues restent visibles ici. Vous pourrez le remettre en vente à tout moment.`;
+    }else{
+      question=`Remettre « ${nom} » en vente ?\n\n`+(p && stockDe(p)===0
+        ? `Son stock est à 0 : il n'apparaîtra dans le catalogue qu'après avoir modifié le stock.`
+        : `Il sera de nouveau visible dans le catalogue.`);
+    }
+    if(!confirm(question)) return;
+
+    const ligne=document.getElementById('prod-'+id);
+    const btn=ligne?ligne.querySelector('.btn-vente'):null;
+    if(btn) btn.disabled=true;
+    const action=retirer?'retrait':'remise';
     try{
-      const maj={}; maj[APRES_TACHE_11.retrait.colonne]=retirer;
-      const {data,error}=await window._sb.from('produits').update(maj).eq('id',id).select('id');
-      if(error){ messageProduit(id,echapper(messageErreur(error,'modification'))); return; }
-      if(!data || data.length===0){ messageProduit(id,"Le produit n'a pas été modifié : votre compte n'a pas l'autorisation de le faire."); return; }
-      showAlert('success',retirer?'✅ Produit retiré du catalogue.':'✅ Produit remis en vente.');
+      const {data,error}=await window._sb.from('produits').update({en_vente:!retirer}).eq('id',id).select('id');
+      if(error){ messageProduit(id,echapper(messageErreur(error,action))); return; }
+      if(!data || data.length===0){ messageProduit(id,"Le produit n'a pas été modifié : votre compte n'a pas l'autorisation de le faire. Rechargez la page et réessayez."); return; }
+      showAlert('success',retirer?'✅ Produit retiré du catalogue.':(p && stockDe(p)===0?'✅ Produit remis en vente. Modifiez son stock pour qu\'il réapparaisse dans le catalogue.':'✅ Produit remis en vente.'));
       await loadProduits();
     }catch(e){
-      messageProduit(id,echapper(messageErreur(e,'modification')));
+      messageProduit(id,echapper(messageErreur(e,action)));
+    }finally{
+      if(btn && document.body.contains(btn)) btn.disabled=false;
     }
   }
 
-  // ===== 3 et 4. Commandes reçues =====
+  // ===== Modifier le stock (colonne quantite, jamais négative) =====
+  const stockValide=v=>/^\d{1,9}$/.test(String(v).trim());
+
+  function ouvrirStock(id){
+    cacherMessageProduit(id);
+    const p=produitParId(id);
+    const bloc=document.getElementById('stock-'+id);
+    const champ=document.getElementById('stockinput-'+id);
+    if(!bloc||!champ) return;
+    champ.value=p?stockDe(p):'';
+    champ.classList.remove('error');
+    document.getElementById('err-stock-'+id).classList.remove('show');
+    bloc.hidden=false;
+    champ.focus();
+    bloc.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  function fermerStock(id){
+    const bloc=document.getElementById('stock-'+id);
+    if(bloc) bloc.hidden=true;
+  }
+  function verifierStock(id){
+    const champ=document.getElementById('stockinput-'+id);
+    const ok=stockValide(champ.value);
+    champ.classList.toggle('error',!ok);
+    document.getElementById('err-stock-'+id).classList.toggle('show',!ok);
+    return ok;
+  }
+  // Le message rouge disparaît dès que le champ est corrigé ; « Entrée » enregistre.
+  function brancherChampsStock(){
+    document.querySelectorAll('.stock-edit input').forEach(champ=>{
+      const id=champ.dataset.produit;
+      champ.addEventListener('input',()=>{
+        if(champ.classList.contains('error')) verifierStock(id);
+        cacherMessageProduit(id);
+      });
+      champ.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); enregistrerStock(id); } });
+    });
+  }
+
+  async function enregistrerStock(id){
+    cacherMessageProduit(id);
+    if(!verifierStock(id)){ document.getElementById('stockinput-'+id).focus(); return; }
+    const p=produitParId(id);
+    if(!p){ messageProduit(id,"Produit introuvable. Rechargez la page."); return; }
+    const nouveau=parseInt(document.getElementById('stockinput-'+id).value,10);
+    const ancien=stockDe(p);
+    if(nouveau===ancien){ fermerStock(id); return; }
+
+    const btn=document.getElementById('stocksave-'+id);
+    btn.disabled=true; btn.textContent='Enregistrement...';
+    try{
+      // On n'écrit que si le stock n'a pas bougé depuis l'affichage :
+      // sinon une commande arrivée entre-temps serait effacée.
+      const {data,error}=await window._sb.from('produits').update({quantite:nouveau}).eq('id',id).eq('quantite',p.quantite).select('id');
+      if(error){ messageProduit(id,echapper(messageErreur(error,'stock'))); return; }
+      if(!data || data.length===0){
+        // Rien d'écrit : le stock a changé, ou le compte n'a pas l'autorisation.
+        const {data:actuel,error:errLecture}=await window._sb.from('produits').select('quantite').eq('id',id).maybeSingle();
+        if(!errLecture && actuel && Number(actuel.quantite)!==Number(p.quantite)){
+          p.quantite=actuel.quantite;
+          const val=document.getElementById('stockval-'+id);
+          if(val){ val.textContent=nombre(stockDe(p))+' '+p.unite; val.classList.toggle('zero',stockDe(p)===0); }
+          messageProduit(id,`Le stock n'a pas été modifié : il a changé pendant votre saisie (sans doute une nouvelle commande). Il est maintenant de <strong>${nombre(stockDe(p))} ${echapper(p.unite)}</strong>. Vérifiez le nombre, puis enregistrez à nouveau.`);
+        }else{
+          messageProduit(id,"Le stock n'a pas été modifié : votre compte n'a pas l'autorisation de le faire. Rechargez la page et réessayez.");
+        }
+        return;
+      }
+      showAlert('success',`✅ Stock mis à jour : ${nombre(nouveau)} ${p.unite}.`);
+      await loadProduits();
+    }catch(e){
+      messageProduit(id,echapper(messageErreur(e,'stock')));
+    }finally{
+      if(document.body.contains(btn)){ btn.disabled=false; btn.textContent='Enregistrer'; }
+    }
+  }
+
+  // ===== Commandes reçues =====
+  async function lireCommandes(){
+    // Requête donnée par ELO : la commande avec le nom et l'unité de son produit
+    let res=await window._sb.from('commandes').select('*, produits(nom, unite)').eq('vendeur_id',monId).order('created_at',{ascending:false});
+    // Si le lien vers « produits » n'est pas reconnu, on relit sans lui (noms pris dans « Mes produits »)
+    if(res.error && String(res.error.code||'').startsWith('PGRST2')){
+      res=await window._sb.from('commandes').select('*').eq('vendeur_id',monId).order('created_at',{ascending:false});
+    }
+    return res;
+  }
+
   async function loadCommandes(){
     const container=document.getElementById('commandesContainer');
     if(!monId) return;
-    const colonnes=['id','created_at','produit_id','quantite','montant_total','commission','statut'];
-    ['livraison','adresse','note'].forEach(k=>{ if(APRES_TACHE_11[k].actif) colonnes.push(APRES_TACHE_11[k].colonne); });
 
     let data=null,error=null;
-    try{
-      ({data,error}=await window._sb.from('commandes').select(colonnes.join(',')).eq('vendeur_id',monId).order('created_at',{ascending:false}));
-    }catch(e){ error=e; }
+    try{ ({data,error}=await lireCommandes()); }catch(e){ error=e; }
 
     if(error){
       document.getElementById('statCommandes').textContent='—';
@@ -549,23 +701,23 @@
       container.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">Aucune commande pour le moment</div><div class="empty-sub">Les commandes passées sur vos produits apparaîtront ici.</div></div>`;
       return;
     }
-
-    // Nom et unité des produits : on les prend dans « Mes produits » (déjà chargés)
-    const produitsParId={}; mesProduits.forEach(p=>produitsParId[p.id]=p);
-    container.innerHTML=commandes.map(c=>ligneCommande(c,produitsParId[c.produit_id])).join('');
+    container.innerHTML=commandes.map(ligneCommande).join('');
   }
 
-  function ligneCommande(c,p){
+  function ligneCommande(c){
+    // Nom et unité : d'abord ceux joints par la requête, sinon ceux de « Mes produits »
+    const p=c.produits || produitParId(c.produit_id);
     const nomProduit=p?echapper(p.nom):'Produit';
     const unite=p?' '+echapper(p.unite):'';
     const libelle=STATUTS[c.statut] || (c.statut?String(c.statut).replace(/_/g,' '):'—');
     const classe=STATUTS[c.statut]?'statut':'statut autre';
 
-    // Après la tâche 11 d'ELO : livraison, adresse et note de l'acheteur
+    // Livraison, adresse et note : les anciennes commandes n'en ont pas, on n'affiche alors rien.
     const extras=[];
-    if(APRES_TACHE_11.livraison.actif && c[APRES_TACHE_11.livraison.colonne]) extras.push('🚚 '+echapper(c[APRES_TACHE_11.livraison.colonne]));
-    if(APRES_TACHE_11.adresse.actif && c[APRES_TACHE_11.adresse.colonne]) extras.push('📍 '+echapper(c[APRES_TACHE_11.adresse.colonne]));
-    if(APRES_TACHE_11.note.actif && c[APRES_TACHE_11.note.colonne]) extras.push('💬 « '+echapper(c[APRES_TACHE_11.note.colonne])+' »');
+    const mode=c.mode_livraison;
+    if(mode) extras.push(MODES_LIVRAISON[mode] || ('🚚 '+echapper(mode)));
+    if(mode==='livraison' && c.adresse_livraison) extras.push('📍 Adresse : '+echapper(c.adresse_livraison));
+    if(c.note_acheteur) extras.push('💬 Note de l\'acheteur : « '+echapper(c.note_acheteur)+' »');
 
     return `
       <div class="order-item">
@@ -585,7 +737,7 @@
       </div>`;
   }
 
-  // ===== 6. Ajouter un produit =====
+  // ===== Ajouter un produit =====
   const champs={
     prodNom: v=>v.trim().length>0,
     prodPrix: v=>/^\d+$/.test(v.trim()) && parseInt(v,10)>0,
