@@ -173,7 +173,6 @@
     <!-- STEP 3 -->
     <div class="form-step" id="step3">
       <div class="step-title">🔒 Mot de passe sécurisé</div>
-      <div class="security-note">🔒 Votre mot de passe sera <strong>chiffré</strong> — même nous ne pouvons pas le lire.</div>
       <div class="form-group">
         <label>Mot de passe <span class="required">*</span></label>
         <div class="pwd-wrap"><input type="password" id="password" placeholder="Minimum 6 caractères" oninput="checkPwd(this.value)" autocomplete="new-password"/><button class="pwd-toggle" onclick="togglePwd('password',this)" type="button">👁️</button></div>
@@ -196,7 +195,7 @@
     <!-- SUCCESS -->
     <div class="success-screen" id="successScreen">
       <div class="success-icon">✅</div>
-      <h2>Bienvenue sur Sen Tolbi !</h2>
+      <h2>Bienvenue sur Sen&nbsp;Tolbi&nbsp;!</h2>
       <p id="successMsg">Votre compte a été créé avec succès.</p>
       <button class="btn-primary" id="btnDashboard">Accéder à mon espace →</button>
     </div>
@@ -630,6 +629,14 @@ async function redirigerSiDejaConnecte() {
     document.getElementById('successMsg').textContent='Bienvenue '+prenom+' ! Votre compte '+type+' est créé et sécurisé.';
     document.getElementById('btnDashboard').onclick=()=>{ window.location.href=pageDeSonEspace(type); };
   }
+
+  // Le message rouge d'un champ disparaît dès qu'on le corrige.
+  ['prenom','nom','email','tel'].forEach(id => document.getElementById(id).addEventListener('input', () => showError(id, false)));
+  ['typeProduction','zone','zoneAcheteur'].forEach(id => document.getElementById(id).addEventListener('change', () => showError(id, false)));
+  document.getElementById('countryCode').addEventListener('change', () => showError('tel', false));
+  document.getElementById('password').addEventListener('input', e => { showError('pwd', false); e.target.classList.remove('error'); });
+  document.getElementById('password2').addEventListener('input', e => { showError('pwd2', false); e.target.classList.remove('error'); });
+  document.getElementById('cguCheck').addEventListener('change', () => showError('cgu', false));
 
   // Quelqu'un déjà connecté qui ouvre l'inscription retourne dans son espace.
   redirigerSiDejaConnecte();
