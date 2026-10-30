@@ -73,6 +73,34 @@
     .btn-cancel{flex:1;padding:.75rem;background:transparent;border:1.5px solid rgba(61,43,26,.2);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--baobab);}
     .btn-confirm{flex:1;padding:.75rem;background:var(--terracotta);color:white;border:none;border-bottom:3px solid var(--terracotta-dark);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;}
 
+    /* MES COMMANDES */
+    .orders-list{display:flex;flex-direction:column;gap:.9rem;}
+    .order{background:var(--cream);border:1px solid rgba(45,106,79,.12);border-radius:8px;padding:1rem;}
+    .order-top{display:flex;justify-content:space-between;align-items:flex-start;gap:.6rem;margin-bottom:.7rem;}
+    .order-product{font-weight:600;font-size:.95rem;color:var(--baobab);}
+    .order-date{font-size:.75rem;color:#8B6B50;margin-top:.15rem;}
+    .order-status{flex-shrink:0;font-size:.72rem;font-weight:600;padding:.25rem .6rem;border-radius:20px;background:rgba(212,146,42,.15);color:#8a5a12;white-space:nowrap;}
+    .order-rows{display:grid;grid-template-columns:auto 1fr;gap:.35rem .8rem;font-size:.83rem;}
+    .order-rows dt{color:#8B6B50;}
+    .order-rows dd{color:var(--text);text-align:right;overflow-wrap:anywhere;}
+    .order-total{font-weight:700;color:var(--terracotta);}
+    .order-error{background:#FDECEA;border:1px solid rgba(196,80,26,.35);color:var(--terracotta-dark);border-radius:6px;padding:.9rem 1rem;font-size:.88rem;line-height:1.5;}
+
+    /* Téléphone (360 px) : la barre du haut passe sur deux lignes, les boutons ne sont plus coupés */
+    @media(max-width:600px){
+      .content{padding:1rem .75rem;}
+      .user-banner{padding:1rem;flex-direction:column;align-items:stretch;}
+      .banner-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;}
+      .btn-banner{justify-content:center;padding:.55rem .3rem;font-size:.75rem;text-align:center;white-space:nowrap;}
+      .btn-label{display:none;}
+      .card-header{padding:.9rem 1rem;}
+      .card-body{padding:1rem;}
+      .cards-grid{grid-template-columns:1fr 1fr;gap:.6rem;}
+      .stat-card{padding:1rem;}
+      .stat-value{font-size:1.5rem;}
+      .products-grid{grid-template-columns:repeat(2,1fr);gap:.6rem;}
+    }
+
     .woven-top{height:5px;background:repeating-linear-gradient(90deg,var(--terracotta) 0 8px,var(--gold) 8px 16px,var(--green) 16px 24px,var(--sand) 24px 32px);}
   </style>
 </head>
@@ -92,7 +120,7 @@
       </div>
     </div>
     <div class="banner-actions">
-      <a href="catalogue.html" class="btn-banner btn-catalogue">🛒 Voir les produits</a>
+      <a href="catalogue.html" class="btn-banner btn-catalogue">🛒 <span class="btn-label">Voir les </span>produits</a>
       <a href="index.html" class="btn-banner btn-home">🏠 Accueil</a>
       <button class="btn-banner btn-logout-banner" onclick="showLogout()">🚪 Déconnexion</button>
     </div>
@@ -102,13 +130,21 @@
   <div class="cards-grid">
     <div class="stat-card">
       <div class="stat-label">📦 Mes commandes</div>
-      <div class="stat-value">—</div>
-      <div class="stat-sub">Bientôt disponible</div>
+      <div class="stat-value" id="nbCommandes">—</div>
+      <div class="stat-sub" id="nbCommandesSub">Chargement…</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">❤️ Mes favoris</div>
       <div class="stat-value">—</div>
       <div class="stat-sub">Bientôt disponible</div>
+    </div>
+  </div>
+
+  <!-- MES COMMANDES (lues dans Supabase, la plus récente en haut) -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">📦 Mes commandes</span></div>
+    <div class="card-body" id="commandesContainer">
+      <div class="loading">⏳ Chargement de vos commandes...</div>
     </div>
   </div>
 
@@ -120,19 +156,6 @@
     </div>
     <div class="card-body" id="produitsContainer">
       <div class="loading">⏳ Chargement des produits...</div>
-    </div>
-  </div>
-
-  <!-- COMMANDES -->
-  <div class="card">
-    <div class="card-header"><span class="card-title">📦 Mes commandes récentes</span></div>
-    <div class="card-body">
-      <div class="empty-state" style="padding:2rem">
-        <div class="empty-icon">📭</div>
-        <div class="empty-title">Aucune commande pour l'instant</div>
-        <div class="empty-sub">Parcourez le catalogue et passez votre première commande auprès d'un producteur local.</div>
-        <a href="catalogue.html" class="btn-go">Aller au catalogue</a>
-      </div>
     </div>
   </div>
 
@@ -157,17 +180,126 @@
 
   const emojis={'Légumes':'🥬','Fruits':'🍎','Céréales':'🌾','Légumineuses':'🥜','Viande / Volaille':'🥩','Produits laitiers':'🥛','Épices':'🌿'};
 
+  // Échappe le texte saisi par les utilisateurs avant de l'afficher
+  function esc(t){return String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function fcfa(n){return (Number(n)||0).toLocaleString('fr-FR')+' FCFA';}
+
+  // Page réservée aux acheteurs : sans session → connexion ; compte vendeur → son espace.
   async function init(){
-    const {data:{session}}=await window._sb.auth.getSession();
-    if(!session){window.location.href='connexion.html';return;}
-    const user=JSON.parse(localStorage.getItem('sentolbi_user')||'{}');
+    let session=null;
+    try{({data:{session}}=await window._sb.auth.getSession());}catch(e){}
+    if(!session){localStorage.removeItem('sentolbi_user');window.location.replace('connexion.html');return;}
+
+    // Le type vient de la base (le profil de la personne connectée), pas seulement du navigateur.
+    let user=null;
+    try{
+      const {data,error}=await window._sb.from('utilisateurs').select('*').eq('id',session.user.id).maybeSingle();
+      if(!error&&data){user=data;localStorage.setItem('sentolbi_user',JSON.stringify(data));}
+    }catch(e){}
+    if(!user){
+      const meta=session.user.user_metadata||{};
+      user={id:session.user.id,prenom:meta.prenom||'',nom:meta.nom||'',type:meta.type||null};
+    }
+    if(user.type==='vendeur'){window.location.replace('dashboard-agriculteur.html');return;}
+
     if(user.prenom) document.getElementById('userName').textContent=user.prenom+' '+(user.nom||'');
+    document.querySelector('.user-role').textContent='Acheteur'+(user.zone?' · '+user.zone:'');
+    loadCommandes(session.user.id);
     loadProduits();
   }
 
+  const libellesStatut={en_attente:'En attente'};
+  const libellesLivraison={livraison:'Livraison à domicile',retrait:'Retrait chez le producteur'};
+
+  // La base enregistre l'heure en UTC sans fuseau : on l'affiche à l'heure de Dakar.
+  function dateCommande(t){
+    if(!t)return '';
+    const d=new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(t)?t:t+'Z');
+    if(isNaN(d))return '';
+    return d.toLocaleString('fr-FR',{timeZone:'Africa/Dakar',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  }
+
+  function afficherCompteur(n,sub){
+    document.getElementById('nbCommandes').textContent=n;
+    document.getElementById('nbCommandesSub').textContent=sub;
+  }
+
+  async function loadCommandes(acheteurId){
+    const container=document.getElementById('commandesContainer');
+    let commandes, vendeurs={};
+    try{
+      // Les règles de la base ne renvoient que les commandes de la personne connectée ;
+      // le filtre sur acheteur_id garde la page juste même si ces règles changent.
+      const {data,error}=await window._sb.from('commandes')
+        .select('id,created_at,quantite,montant_total,commission,statut,mode_livraison,adresse_livraison,note_acheteur,vendeur_id,produits(nom,unite)')
+        .eq('acheteur_id',acheteurId)
+        .order('created_at',{ascending:false});
+      if(error)throw error;
+      commandes=data||[];
+
+      // Prénom et zone du vendeur (vue publique : jamais le téléphone ni l'e-mail)
+      const ids=[...new Set(commandes.map(c=>c.vendeur_id).filter(Boolean))];
+      if(ids.length){
+        const {data:vs,error:errV}=await window._sb.from('vendeurs_publics').select('id,prenom,zone').in('id',ids);
+        if(errV)throw errV;
+        (vs||[]).forEach(v=>{vendeurs[v.id]=v;});
+      }
+    }catch(e){
+      console.error(e);
+      afficherCompteur('—','Non chargé');
+      container.innerHTML=`<div class="order-error">Impossible de charger vos commandes pour le moment. Vérifiez votre connexion Internet puis rechargez la page.</div>`;
+      return;
+    }
+
+    const n=commandes.length;
+    afficherCompteur(n, n===0?'Aucune commande':(n===1?'commande passée':'commandes passées'));
+
+    if(n===0){
+      container.innerHTML=`<div class="empty-state" style="padding:2rem 1rem">
+        <div class="empty-icon">📭</div>
+        <div class="empty-title">Aucune commande pour l'instant</div>
+        <div class="empty-sub">Parcourez le catalogue et passez votre première commande auprès d'un producteur local.</div>
+        <a href="catalogue.html" class="btn-go">Aller au catalogue</a>
+      </div>`;
+      return;
+    }
+
+    container.innerHTML=`<div class="orders-list">`+commandes.map(c=>{
+      const v=vendeurs[c.vendeur_id];
+      const vendeur=v?[v.prenom,v.zone].filter(Boolean).join(' · '):'Producteur';
+      const produit=c.produits?.nom||'Produit';
+      const unite=c.produits?.unite||'';
+      const montant=Number(c.montant_total)||0, commission=Number(c.commission)||0;
+      const statut=libellesStatut[c.statut]||c.statut||'—';
+      const livraison=libellesLivraison[c.mode_livraison]||'Non précisé';
+      return `<article class="order">
+        <div class="order-top">
+          <div>
+            <div class="order-product">${esc(produit)}</div>
+            <div class="order-date">${esc(dateCommande(c.created_at))}</div>
+          </div>
+          <span class="order-status">${esc(statut)}</span>
+        </div>
+        <dl class="order-rows">
+          <dt>Quantité</dt><dd>${esc(c.quantite)} ${esc(unite)}</dd>
+          <dt>Vendeur</dt><dd>👨‍🌾 ${esc(vendeur)}</dd>
+          <dt>Montant</dt><dd>${fcfa(montant)}</dd>
+          <dt>Commission Sen Tolbi</dt><dd>${fcfa(commission)}</dd>
+          <dt>Total</dt><dd class="order-total">${fcfa(montant+commission)}</dd>
+          <dt>Mode</dt><dd>${esc(livraison)}</dd>
+          <dt>Adresse</dt><dd>${c.adresse_livraison?esc(c.adresse_livraison):'—'}</dd>
+          <dt>Note</dt><dd>${c.note_acheteur?esc(c.note_acheteur):'—'}</dd>
+        </dl>
+      </article>`;
+    }).join('')+`</div>`;
+  }
+
   async function loadProduits(){
-    const {data,error}=await window._sb.from('produits').select('*,utilisateurs:vendeurs_publics(prenom,nom,zone)').order('created_at',{ascending:false}).limit(8);
     const container=document.getElementById('produitsContainer');
+    let data=null,error=null;
+    try{
+      ({data,error}=await window._sb.from('produits').select('*,utilisateurs:vendeurs_publics(prenom,nom,zone)').eq('en_vente',true).order('created_at',{ascending:false}).limit(8));
+    }catch(e){error=e;}
     if(error||!data||data.length===0){
       container.innerHTML=`<div class="empty-state"><div class="empty-icon">🌱</div><div class="empty-title">Aucun produit disponible</div><div class="empty-sub">Les vendeurs n'ont pas encore publié de produits. Revenez bientôt !</div><a href="catalogue.html" class="btn-go">Voir le catalogue</a></div>`;
       return;
@@ -176,9 +308,9 @@
       data.map(p=>`
         <div class="product-card" onclick="window.location.href='catalogue.html'">
           <div class="product-emoji">${emojis[p.categorie]||'🌿'}</div>
-          <div class="product-name">${p.nom}</div>
-          <div class="product-price">${p.prix.toLocaleString('fr-FR')} F/${p.unite}</div>
-          <div class="product-farmer">👨‍🌾 ${p.utilisateurs?p.utilisateurs.prenom+' '+p.utilisateurs.nom:'Producteur'}</div>
+          <div class="product-name">${esc(p.nom)}</div>
+          <div class="product-price">${(Number(p.prix)||0).toLocaleString('fr-FR')} F/${esc(p.unite)}</div>
+          <div class="product-farmer">👨‍🌾 ${p.utilisateurs?esc(p.utilisateurs.prenom+' '+p.utilisateurs.nom):'Producteur'}</div>
         </div>`).join('')+
       `</div><div style="text-align:center;margin-top:1.5rem"><a href="catalogue.html" class="btn-go">Voir tous les produits →</a></div>`;
   }
