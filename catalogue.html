@@ -158,7 +158,28 @@
     .woven-mini{height:4px;border-radius:2px;background:repeating-linear-gradient(90deg,var(--terracotta) 0 8px,var(--gold) 8px 16px,var(--green) 16px 24px,var(--sand) 24px 32px);margin-bottom:1.3rem;}
     .btn-success{width:100%;padding:.85rem;background:var(--green);color:white;border:none;border-bottom:3px solid #1a4a35;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;}
 
+    .form-error{display:none;background:#FDECEA;border:1px solid rgba(196,80,26,.35);color:var(--terracotta-dark);border-radius:6px;padding:.7rem .9rem;font-size:.85rem;line-height:1.5;margin-bottom:.8rem;}
+    .form-error.show{display:block;}
+    .label-required{color:var(--terracotta);}
+    .ci-max{font-size:.7rem;color:var(--terracotta);margin-top:.2rem;}
+    .qty-btn:disabled,.ci-qty-btn:disabled{opacity:.35;cursor:not-allowed;}
+    .modal{max-height:90vh;overflow-y:auto;}
+
     @media(max-width:768px){.filters{display:none;}.products-area{padding:.8rem 1rem;}.topnav{padding:.8rem 1rem;}.hero-banner{padding:1.5rem;}.hero-stats{display:none;}}
+    /* Téléphone (360 px) : la recherche passe sur sa propre ligne, la barre du haut n'est plus coupée */
+    @media(max-width:600px){
+      .topnav{flex-wrap:wrap;gap:.6rem .4rem;padding:.7rem .75rem;}
+      .logo-text{font-size:1.05rem;}
+      .nav-right{gap:.35rem;}
+      .nav-user-info,.btn-label{display:none;}
+      .btn-small{padding:.45rem .6rem;font-size:.75rem;}
+      .cart-btn{padding:.45rem .7rem;font-size:.8rem;}
+      .search-wrap{order:3;flex:1 1 100%;max-width:none;}
+      .cart-drawer{width:100%;max-width:360px;}
+      .modal{padding:1.3rem;}
+      /* iPhone : texte des champs à 16 px, sinon Safari zoome la page au toucher */
+      input,select,textarea{font-size:16px;}
+    }
   </style>
 </head>
 <body>
@@ -175,7 +196,7 @@
   </div>
   <div class="nav-right" id="navRight">
     <button class="cart-btn" onclick="toggleCart()">
-      🛒 Panier <div class="cart-count" id="cartCount">0</div>
+      🛒 <span class="btn-label">Panier</span> <div class="cart-count" id="cartCount">0</div>
     </button>
   </div>
 </nav>
@@ -241,24 +262,25 @@
 <div class="modal-overlay" id="checkoutModal" onclick="closeCheckout(event)">
   <div class="modal" id="checkoutContent">
     <div class="modal-title">📦 Finaliser la commande</div>
+    <div class="form-error" id="checkoutError" role="alert"></div>
     <div class="form-group">
-      <label>Mode de livraison</label>
-      <select id="deliveryMode">
+      <label for="deliveryMode">Mode de livraison</label>
+      <select id="deliveryMode" onchange="updateAdresseField()">
         <option value="livraison">🚚 Livraison à domicile</option>
         <option value="retrait">🏪 Retrait chez le producteur</option>
       </select>
     </div>
     <div class="form-group">
-      <label>Adresse / Quartier</label>
-      <input type="text" id="adresse" placeholder="Ex: Rue 10, Plateau, Dakar"/>
+      <label for="adresse">Adresse / Quartier <span class="label-required" id="adresseRequired">*</span></label>
+      <input type="text" id="adresse" maxlength="300" placeholder="Ex: Rue 10, Plateau, Dakar"/>
     </div>
     <div class="form-group">
       <label>Paiement</label>
       <div style="background:var(--cream);border-radius:6px;padding:.8rem 1rem;font-size:.82rem;color:#6B4F35;">Le paiement en ligne n'est pas encore disponible. L'équipe Sen Tolbi vous contacte pour organiser le paiement et la livraison.</div>
     </div>
     <div class="form-group">
-      <label>Note pour le vendeur <span style="color:#8B6B50;font-weight:300;text-transform:none;font-size:.7rem">(optionnel)</span></label>
-      <textarea id="noteVendeur" rows="2" placeholder="Instructions spéciales, horaires disponibles..."></textarea>
+      <label for="noteVendeur">Note pour le vendeur <span style="color:#8B6B50;font-weight:300;text-transform:none;font-size:.7rem">(optionnel)</span></label>
+      <textarea id="noteVendeur" rows="2" maxlength="500" placeholder="Instructions spéciales, horaires disponibles..."></textarea>
     </div>
     <div style="background:var(--cream);border-radius:6px;padding:.8rem 1rem;font-size:.82rem;color:#6B4F35;margin-bottom:.5rem;">
       💰 Total, commission comprise (hors livraison) : <strong id="modalTotal">0 F</strong>
@@ -300,23 +322,57 @@
       const dashLink=user.type==='vendeur'?'dashboard-agriculteur.html':'dashboard-acheteur.html';
       const name=user.prenom||session?.user?.email||'';
       navRight.innerHTML=`
-        <span class="nav-user-info">👤 ${name}</span>
+        <span class="nav-user-info">👤 ${esc(name)}</span>
         <a href="${dashLink}" class="btn-small btn-dashboard">Mon espace</a>
-        <button class="btn-small btn-deconnexion" onclick="logout()">🚪 Déconnexion</button>
-        <button class="cart-btn" onclick="toggleCart()">🛒 Panier <div class="cart-count" id="cartCount">0</div></button>`;
+        <button class="btn-small btn-deconnexion" onclick="logout()" title="Déconnexion" aria-label="Déconnexion">🚪 <span class="btn-label">Déconnexion</span></button>
+        <button class="cart-btn" onclick="toggleCart()">🛒 <span class="btn-label">Panier</span> <div class="cart-count" id="cartCount">0</div></button>`;
     } else {
       navRight.innerHTML=`
         <a href="connexion.html" class="btn-small btn-connexion">Se connecter</a>
-        <button class="cart-btn" onclick="toggleCart()">🛒 Panier <div class="cart-count" id="cartCount">0</div></button>`;
+        <button class="cart-btn" onclick="toggleCart()">🛒 <span class="btn-label">Panier</span> <div class="cart-count" id="cartCount">0</div></button>`;
     }
     loadProducts();
   }
 
-  // LOAD PRODUCTS
+  // Échappe le texte saisi par les utilisateurs avant de l'afficher
+  function esc(v){
+    return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // Traduit en français les erreurs techniques. Les refus de la base (code P0001 :
+  // stock insuffisant, produit retiré, adresse manquante…) sont déjà en français.
+  function messageErreur(error,parDefaut){
+    const m=(error&&error.message)||'';
+    const code=(error&&error.code)||'';
+    if(code==='P0001'&&m) return m;
+    if(/failed to fetch|load failed|networkerror|network request failed/i.test(m))
+      return "Connexion impossible. Vérifiez votre connexion Internet puis réessayez.";
+    if(/^PGRST30/.test(code)||/jwt/i.test(m))
+      return "Votre session a expiré. Reconnectez-vous puis réessayez.";
+    if(code==='42501')
+      return "Votre session ne correspond plus à votre compte. Déconnectez-vous, reconnectez-vous puis réessayez.";
+    if(code==='23514')
+      return "Une information de la commande n'est pas valide. Vérifiez le formulaire puis réessayez.";
+    return parDefaut||"La commande n'a pas pu être enregistrée. Réessayez ou contactez l'équipe Sen Tolbi.";
+  }
+
+  // LOAD PRODUCTS : seulement les produits en vente avec du stock
   async function loadProducts(){
-    const {data,error}=await sb.from('produits').select('*,utilisateurs:vendeurs_publics(id,prenom,nom,zone)').order('created_at',{ascending:false});
-    if(error||!data||data.length===0){showEmpty();return;}
-    allProducts=data;
+    const {data,error}=await sb.from('produits')
+      .select('*,utilisateurs:vendeurs_publics(id,prenom,nom,zone)')
+      .eq('en_vente',true)
+      .gt('quantite',0)
+      .order('created_at',{ascending:false});
+    if(error){
+      console.error(error);
+      document.getElementById('productsContainer').innerHTML=`<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Impossible de charger les produits</div><div class="empty-sub">${esc(messageErreur(error,"Le catalogue n'a pas pu être chargé. Rechargez la page dans un instant."))}</div></div>`;
+      document.getElementById('resultsCount').innerHTML='<strong>Erreur de chargement</strong>';
+      document.getElementById('heroStats').textContent='';
+      return;
+    }
+    allProducts=data||[];
+    syncCartWithStock();
+    if(allProducts.length===0){showEmpty();return;}
     document.getElementById('heroStats').textContent=allProducts.length+' produit(s) disponible(s)';
     renderProducts(allProducts);
   }
@@ -330,22 +386,22 @@
         <div class="product-card" id="card-${p.id}">
           <div class="product-img ${bgs[i%bgs.length]}">${emojis[p.categorie]||'🌿'}</div>
           <div class="product-body">
-            <div class="product-cat">${p.categorie}</div>
-            <div class="product-name">${p.nom}</div>
-            <div class="farmer-info">👨‍🌾 ${p.utilisateurs?p.utilisateurs.prenom+' '+p.utilisateurs.nom:'Producteur'} · ${p.utilisateurs?.zone||'Dakar'}</div>
+            <div class="product-cat">${esc(p.categorie)}</div>
+            <div class="product-name">${esc(p.nom)}</div>
+            <div class="farmer-info">👨‍🌾 ${p.utilisateurs?esc(p.utilisateurs.prenom+' '+p.utilisateurs.nom):'Producteur'} · ${esc(p.utilisateurs?.zone||'Dakar')}</div>
             <div class="product-footer">
-              <div class="product-price">${p.prix.toLocaleString('fr-FR')} F <span class="product-unit">/${p.unite}</span></div>
-              <div class="product-qty">✅ ${p.quantite} ${p.unite}</div>
+              <div class="product-price">${p.prix.toLocaleString('fr-FR')} F <span class="product-unit">/${esc(p.unite)}</span></div>
+              <div class="product-qty">✅ ${p.quantite} ${esc(p.unite)}</div>
             </div>
             <div class="qty-selector">
               <span class="qty-label">Qté :</span>
               <div class="qty-controls">
                 <button class="qty-btn" onclick="changeQty('${p.id}',-1)">−</button>
                 <span class="qty-val" id="qty-${p.id}">1</span>
-                <button class="qty-btn" onclick="changeQty('${p.id}',1,${p.quantite})">+</button>
+                <button class="qty-btn" onclick="changeQty('${p.id}',1)">+</button>
               </div>
             </div>
-            <button class="btn-cart" id="btn-${p.id}" onclick="addToCart(${JSON.stringify(p).replace(/"/g,'&quot;')})">🛒 Ajouter au panier</button>
+            <button class="btn-cart" id="btn-${p.id}" onclick="addToCart('${p.id}')">🛒 Ajouter au panier</button>
           </div>
         </div>`).join('')+`</div>`;
   }
@@ -356,29 +412,60 @@
     document.getElementById('heroStats').textContent='0 produit disponible';
   }
 
+  // Stock restant pour un produit, en tenant compte de ce qui est déjà dans le panier
+  function resteDisponible(id){
+    const p=allProducts.find(x=>x.id===id);
+    if(!p)return 0;
+    const inCart=cart.find(i=>i.id===id);
+    return p.quantite-(inCart?inCart.qty:0);
+  }
+
   // QTY
-  function changeQty(id,delta,max){
+  function changeQty(id,delta){
     const el=document.getElementById('qty-'+id);
+    const max=Math.max(1,resteDisponible(id));
     let val=parseInt(el.textContent)+delta;
     if(val<1)val=1;
-    if(max&&val>max)val=max;
+    if(val>max)val=max;
     el.textContent=val;
   }
 
   // CART
-  function addToCart(product){
-    const qty=parseInt(document.getElementById('qty-'+product.id).textContent);
-    const existing=cart.find(i=>i.id===product.id);
+  function addToCart(id){
+    const product=allProducts.find(p=>p.id===id);
+    if(!product)return;
+    const btn=document.getElementById('btn-'+id);
+    const reste=resteDisponible(id);
+    if(reste<=0){
+      btn.textContent='Stock maximum déjà dans le panier';
+      setTimeout(()=>{btn.textContent='🛒 Ajouter au panier';},2000);
+      return;
+    }
+    const qty=Math.min(parseInt(document.getElementById('qty-'+id).textContent),reste);
+    const existing=cart.find(i=>i.id===id);
     if(existing){existing.qty+=qty;}
     else{cart.push({...product,qty});}
+    document.getElementById('qty-'+id).textContent=1;
     updateCart();
     // Visual feedback
-    const btn=document.getElementById('btn-'+product.id);
     btn.classList.add('added');
     btn.textContent='✅ Ajouté !';
     setTimeout(()=>{btn.classList.remove('added');btn.textContent='🛒 Ajouter au panier';},1500);
     // Open cart
     if(!cartOpen)toggleCart();
+  }
+
+  // Après un rechargement : met le panier à jour avec le stock réel (produit retiré, épuisé ou stock baissé)
+  function syncCartWithStock(){
+    if(cart.length===0)return;
+    const avant=JSON.stringify(cart.map(i=>[i.id,i.qty]));
+    cart=cart.map(item=>{
+      const p=allProducts.find(x=>x.id===item.id);
+      if(!p)return null;
+      return {...p,qty:Math.min(item.qty,p.quantite)};
+    }).filter(i=>i&&i.qty>0);
+    updateCart();
+    return avant!==JSON.stringify(cart.map(i=>[i.id,i.qty]));
   }
 
   function updateCart(){
@@ -405,13 +492,14 @@
       <div class="cart-item">
         <div class="ci-emoji">${emojis[item.categorie]||'🌿'}</div>
         <div class="ci-info">
-          <div class="ci-name">${item.nom}</div>
-          <div class="ci-price">${item.prix.toLocaleString('fr-FR')} F/${item.unite}</div>
+          <div class="ci-name">${esc(item.nom)}</div>
+          <div class="ci-price">${item.prix.toLocaleString('fr-FR')} F/${esc(item.unite)}</div>
           <div class="ci-qty-controls">
             <button class="ci-qty-btn" onclick="changeCartQty(${idx},-1)">−</button>
             <span class="ci-qty-val">${item.qty}</span>
-            <button class="ci-qty-btn" onclick="changeCartQty(${idx},1)">+</button>
+            <button class="ci-qty-btn" onclick="changeCartQty(${idx},1)" ${item.qty>=item.quantite?'disabled':''}>+</button>
           </div>
+          ${item.qty>=item.quantite?`<div class="ci-max">Stock maximum : ${item.quantite} ${esc(item.unite)}</div>`:''}
         </div>
         <div class="ci-total">${(item.prix*item.qty).toLocaleString('fr-FR')} F</div>
         <button class="ci-remove" onclick="removeFromCart(${idx})">🗑️</button>
@@ -419,8 +507,10 @@
   }
 
   function changeCartQty(idx,delta){
-    cart[idx].qty+=delta;
-    if(cart[idx].qty<=0)cart.splice(idx,1);
+    const item=cart[idx];
+    if(delta>0&&item.qty>=item.quantite)return;
+    item.qty+=delta;
+    if(item.qty<=0)cart.splice(idx,1);
     updateCart();
   }
   function removeFromCart(idx){cart.splice(idx,1);updateCart();}
@@ -440,6 +530,8 @@
         window.location.href='connexion.html';
       return;
     }
+    showCheckoutError('');
+    updateAdresseField();
     document.getElementById('checkoutModal').classList.add('open');
   }
   function closeCheckout(e){
@@ -447,41 +539,75 @@
       document.getElementById('checkoutModal').classList.remove('open');
   }
 
+  // L'adresse est obligatoire seulement pour la livraison à domicile
+  function updateAdresseField(){
+    const livraison=document.getElementById('deliveryMode').value==='livraison';
+    document.getElementById('adresseRequired').style.display=livraison?'inline':'none';
+    document.getElementById('adresse').placeholder=livraison?'Ex: Rue 10, Plateau, Dakar':'Facultatif pour un retrait';
+  }
+
+  function showCheckoutError(msg){
+    const el=document.getElementById('checkoutError');
+    el.textContent=msg;
+    el.classList.toggle('show',!!msg);
+    if(msg)el.scrollIntoView({block:'nearest'});
+  }
+
   async function passCommande(){
     const user=JSON.parse(localStorage.getItem('sentolbi_user')||'{}');
-    if(!user.id){alert('Connectez-vous pour commander.');return;}
+    if(!user.id){showCheckoutError('Connectez-vous pour commander.');return;}
+
+    const delivery=document.getElementById('deliveryMode').value;
+    const adresse=document.getElementById('adresse').value.trim();
+    const note=document.getElementById('noteVendeur').value.trim();
+    if(delivery==='livraison'&&!adresse){
+      showCheckoutError("L'adresse de livraison est obligatoire pour une livraison à domicile.");
+      document.getElementById('adresse').focus();
+      return;
+    }
+    showCheckoutError('');
 
     const btn=document.getElementById('btnConfirmOrder');
     btn.disabled=true;btn.textContent='Traitement...';
 
-    const delivery=document.getElementById('deliveryMode').value;
-    const adresse=document.getElementById('adresse').value;
-    const note=document.getElementById('noteVendeur').value;
-    const total=cart.reduce((s,i)=>s+i.prix*i.qty,0);
-    const commission=Math.round(total*0.05);
-
-    // Enregistrer chaque article comme une commande
-    const commandes=cart.map(item=>({
+    // Un article du panier = une commande. Le vendeur, le montant, la commission
+    // et le statut sont calculés par la base ; elle vérifie aussi le stock et le baisse.
+    // Tri par produit : deux paniers envoyés en même temps verrouillent les produits
+    // dans le même ordre (évite un blocage entre eux).
+    const commandes=[...cart].sort((a,b)=>a.id.localeCompare(b.id)).map(item=>({
       acheteur_id:user.id,
-      vendeur_id:item.vendeur_id||item.utilisateurs?.id,
       produit_id:item.id,
       quantite:item.qty,
-      montant_total:item.prix*item.qty,
-      commission:Math.round(item.prix*item.qty*0.05),
-      statut:'en_attente'
+      mode_livraison:delivery,
+      adresse_livraison:adresse||null,
+      note_acheteur:note||null
     }));
 
-    const {error}=await sb.from('commandes').insert(commandes);
+    let error=null;
+    try{
+      ({error}=await sb.from('commandes').insert(commandes));
+    }catch(e){
+      error=e;
+    }
 
     btn.disabled=false;btn.textContent='Confirmer la commande →';
 
-    if(error){alert('Erreur : '+error.message);return;}
+    if(error){
+      console.error(error);
+      showCheckoutError(messageErreur(error));
+      // Le stock a pu changer : on recharge le catalogue et on ajuste le panier
+      await loadProducts();
+      return;
+    }
 
     // Succès
     document.getElementById('checkoutModal').classList.remove('open');
     document.getElementById('successModal').classList.add('open');
+    document.getElementById('adresse').value='';
+    document.getElementById('noteVendeur').value='';
     cart=[];
     updateCart();
+    loadProducts();
   }
 
   function filterProducts(q){
