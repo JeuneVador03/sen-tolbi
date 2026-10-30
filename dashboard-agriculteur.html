@@ -313,10 +313,18 @@
     return String(t ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
   function fcfa(n){ return Math.round(Number(n)||0).toLocaleString('fr-FR')+' FCFA'; }
+  // Date et heure d'une commande, toujours affichées à l'heure de Dakar (même vue depuis la France).
+  // La base enregistre l'heure en UTC : si le texte reçu ne précise pas le fuseau, on indique que c'est de l'UTC.
   function dateFr(d){
-    const x=new Date(d);
+    let t=String(d ?? '').trim().replace(' ','T');
+    t=t.replace(/(\.\d{3})\d+/,'$1');                      // Safari : 3 chiffres max après la virgule
+    t=t.replace(/([+-]\d{2})$/,'$1:00');                    // « +00 » → « +00:00 »
+    if(t && !/(Z|[+-]\d{2}:?\d{2})$/i.test(t)) t+='Z';      // pas de fuseau → UTC
+    const x=new Date(t);
     if(isNaN(x)) return '';
-    return x.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})+' à '+x.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    const fuseau={timeZone:'Africa/Dakar'};
+    return x.toLocaleDateString('fr-FR',{...fuseau,day:'numeric',month:'short',year:'numeric'})
+      +' à '+x.toLocaleTimeString('fr-FR',{...fuseau,hour:'2-digit',minute:'2-digit'})+' (heure de Dakar)';
   }
   function pageDeSonEspace(type){
     if(type==='acheteur') return 'dashboard-acheteur.html';
