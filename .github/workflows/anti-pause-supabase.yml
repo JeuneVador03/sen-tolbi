@@ -1,0 +1,53 @@
+# Anti-pause Supabase
+# Le projet Supabase gratuit est mis en pause après 7 jours de faible activité
+# (https://supabase.com/docs/guides/platform/free-project-pausing).
+# Cette tâche lit une ligne de la table produits tous les 2 jours pour garder
+# le projet actif, et échoue (croix rouge + e-mail GitHub) si la base ne répond pas.
+#
+# La clé utilisée est la clé publishable, déjà visible dans le code public des
+# pages du site : elle n'est pas secrète. Elle est écrite ici en clair pour qu'il
+# n'y ait rien à configurer. Si la clé change, la changer ici ET dans les pages.
+# Ne jamais mettre ici la clé service_role ni un mot de passe.
+
+name: Anti-pause Supabase
+
+on:
+  schedule:
+    # Tous les 2 jours à 06:17 UTC, soit 06:17 à Dakar
+    - cron: '17 6 */2 * *'
+  # Bouton « Run workflow » dans l'onglet Actions (après fusion dans main)
+  workflow_dispatch:
+  # Essai automatique dans la PR quand ce fichier change
+  pull_request:
+    paths:
+      - '.github/workflows/anti-pause-supabase.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  lire-un-produit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_URL: https://hrhnawzhxwahqkhvxomr.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_8MOWd0KD2jgcV1aN3VaPzA_RfBQLEHf
+    steps:
+      - name: Lire une ligne de produits
+        run: |
+          set -u
+          code=$(curl -sS -o reponse.json -w '%{http_code}' \
+            --retry 3 --retry-delay 20 --retry-all-errors --max-time 30 \
+            "$SUPABASE_URL/rest/v1/produits?select=id&limit=1" \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY") || code="000"
+          echo "Code HTTP : $code"
+          echo "Réponse : $(head -c 300 reponse.json 2>/dev/null)"
+          if [ "$code" != "200" ]; then
+            echo "::error title=Supabase ne répond pas::Code HTTP $code. Le projet est peut-être en pause : ouvrir https://supabase.com/dashboard et cliquer sur « Resume project »."
+            exit 1
+          fi
+          if ! jq -e 'type == "array"' reponse.json > /dev/null; then
+            echo "::error title=Réponse inattendue::Supabase a répondu 200 mais pas une liste de produits."
+            exit 1
+          fi
+          echo "Base active : $(jq length reponse.json) ligne lue."
