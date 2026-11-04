@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sen Tolbi — Nouveau mot de passe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{--terracotta:#C4501A;--terracotta-dark:#8B3210;--sand:#E8C98A;--baobab:#3D2B1A;--gold:#D4922A;--green:#2D6A4F;--cream:#FBF4E6;--white:#FFFDF7;--text:#2A1A0E;}
+    body{background:var(--cream);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;background-image:radial-gradient(circle,rgba(196,80,26,.08) 1px,transparent 1px);background-size:28px 28px;}
+    .woven{height:5px;background:repeating-linear-gradient(90deg,var(--terracotta) 0 12px,var(--gold) 12px 24px,var(--green) 24px 36px,var(--sand) 36px 48px);}
+    .page{max-width:460px;margin:3rem auto;padding:0 1.5rem;animation:fadeUp .5s ease both;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+    .page-icon{text-align:center;font-size:3rem;margin-bottom:.8rem;}
+    .page-title{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--baobab);text-align:center;margin-bottom:.3rem;}
+    .page-sub{text-align:center;color:#6B4F35;font-size:.9rem;margin-bottom:1.8rem;}
+    .card{background:var(--white);border-radius:12px;padding:2rem;border:1.5px solid rgba(196,80,26,.12);box-shadow:0 8px 32px rgba(61,43,26,.08);}
+    .form-group{margin-bottom:1.1rem;}
+    label{display:block;font-size:.75rem;font-weight:600;color:var(--baobab);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.5px;}
+    input{width:100%;padding:.75rem .9rem;border:1.5px solid rgba(61,43,26,.15);border-radius:6px;background:var(--white);font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--text);transition:border-color .2s;}
+    input:focus{outline:none;border-color:var(--terracotta);box-shadow:0 0 0 3px rgba(196,80,26,.08);}
+    input::placeholder{color:#B09075;}
+    .pwd-wrap{position:relative;}
+    .pwd-wrap input{padding-right:2.8rem;}
+    .pwd-toggle{position:absolute;right:.9rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:1rem;background:none;border:none;color:#8B6B50;}
+    .alert{padding:.8rem 1rem;border-radius:6px;font-size:.82rem;margin-bottom:1rem;display:none;border-left:3px solid;}
+    .error-msg{font-size:.72rem;color:#D63B3B;margin-top:.25rem;display:none;} .error-msg.show{display:block;}
+    input.error{border-color:#D63B3B;}
+    .alert.show{display:block;} .alert-error{background:rgba(214,59,59,.08);border-color:#D63B3B;color:#D63B3B;}
+    .btn-primary{width:100%;padding:.95rem;background:var(--terracotta);color:var(--white);border:none;border-radius:6px;border-bottom:3px solid var(--terracotta-dark);font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:1rem;display:flex;align-items:center;justify-content:center;gap:.5rem;text-decoration:none;}
+    @media(hover:hover){.btn-primary:hover{background:var(--terracotta-dark);transform:translateY(1px);}}
+    .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+    .hint{font-size:.72rem;color:#8B6B50;margin-top:.25rem;}
+    .etat{text-align:center;font-size:.9rem;color:#6B4F35;line-height:1.6;}
+    .etat strong{color:var(--baobab);}
+    .divider{display:flex;align-items:center;gap:1rem;margin:1.5rem 0;color:#8B6B50;font-size:.78rem;}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(61,43,26,.1);}
+    .back-link{text-align:center;font-size:.85rem;}
+    .back-link a{display:inline-block;padding:.35rem 0;color:var(--terracotta);font-weight:600;text-decoration:none;}
+    .cache{display:none;}
+    @media(max-width:500px){.page{margin:1.5rem auto;}}
+    /* iPhone : texte des champs à 16 px, sinon Safari zoome la page au toucher */
+    @media(max-width:600px){input,select,textarea{font-size:16px;}}
+  </style>
+</head>
+<body>
+<div class="woven"></div>
+<div class="page">
+  <div class="page-icon">🔒</div>
+  <h1 class="page-title">Nouveau mot de passe</h1>
+  <p class="page-sub" id="sousTitre">Vérification du lien…</p>
+  <div class="card">
+
+    <!-- 1. Pendant la vérification du lien -->
+    <div id="etatAttente" class="etat">⏳ Vérification du lien reçu par e-mail…</div>
+
+    <!-- 2. Lien non valable (expiré, déjà utilisé, ou page ouverte directement) -->
+    <div id="etatInvalide" class="cache">
+      <div class="etat" id="texteInvalide"></div>
+      <a href="mot-de-passe-oublie.html" class="btn-primary">Refaire une demande →</a>
+    </div>
+
+    <!-- 3. Formulaire (affiché seulement si le lien est valable) -->
+    <div id="formulaire" class="cache">
+      <div class="alert alert-error" id="alertError"></div>
+      <div class="form-group">
+        <label for="pwd1">Nouveau mot de passe</label>
+        <div class="pwd-wrap">
+          <input type="password" id="pwd1" placeholder="Au moins 6 caractères" autocomplete="new-password" disabled/>
+          <button class="pwd-toggle" type="button" onclick="togglePwd('pwd1', this)" aria-label="Afficher le mot de passe">👁️</button>
+        </div>
+        <div class="error-msg" id="err-pwd1"></div>
+      </div>
+      <div class="form-group">
+        <label for="pwd2">Confirmer le mot de passe</label>
+        <div class="pwd-wrap">
+          <input type="password" id="pwd2" placeholder="Retapez le mot de passe" autocomplete="new-password" disabled/>
+          <button class="pwd-toggle" type="button" onclick="togglePwd('pwd2', this)" aria-label="Afficher le mot de passe">👁️</button>
+        </div>
+        <div class="error-msg" id="err-pwd2"></div>
+      </div>
+      <button class="btn-primary" id="btnEnregistrer" type="button" onclick="enregistrer()" disabled>Enregistrer le mot de passe →</button>
+    </div>
+
+    <div class="divider">ou</div>
+    <div class="back-link"><a href="connexion.html">← Retour à la connexion</a></div>
+  </div>
+</div>
+
+<script>
+  // Adresse d'arrivée notée AVANT que Supabase la nettoie
+  const URL_DEPART = window.location.href;
+
+  const { createClient } = supabase;
+  window._sb = createClient('https://hrhnawzhxwahqkhvxomr.supabase.co', 'sb_publishable_8MOWd0KD2jgcV1aN3VaPzA_RfBQLEHf');
+
+  // On écoute PASSWORD_RECOVERY tout de suite après la création du client,
+  // sinon l'événement peut passer avant qu'on l'écoute.
+  let lienValable = false;
+  window._sb.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      lienValable = true;
+      // setTimeout : on ne lance pas d'appel Supabase dans ce rappel
+      setTimeout(afficherFormulaire, 0);
+    }
+  });
+
+  const NAV_HTML = `
+<style>
+.nav-hamburger { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(251,244,230,0.97); backdrop-filter: blur(10px); border-bottom: 2px solid rgba(196,80,26,.15); padding: .9rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
+.nav-logo-icon { width: 34px; height: 34px; background: #C4501A; border-radius: 50% 50% 50% 20%; display: flex; align-items: center; justify-content: center; font-size: 1rem; box-shadow: 2px 2px 0 #8B3210; }
+.nav-logo-text { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; color: #C4501A; }
+.nav-logo-text span { color: #D4922A; }
+.hamburger-btn { background: none; border: none; cursor: pointer; padding: .5rem; display: flex; flex-direction: column; gap: 5px; }
+.hamburger-btn span { display: block; width: 24px; height: 2px; background: #3D2B1A; border-radius: 2px; transition: all .3s; }
+.hamburger-btn.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+.hamburger-btn.open span:nth-child(2) { opacity: 0; }
+.hamburger-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+.nav-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 300px; max-width: 85vw; background: #3D2B1A; z-index: 999; transform: translateX(100%); visibility: hidden; transition: transform .3s ease, visibility .3s; display: flex; flex-direction: column; overflow-y: auto; }
+.nav-drawer.open { transform: none; visibility: visible; box-shadow: -8px 0 32px rgba(0,0,0,.3); }
+/* Téléphone (360 px) : barre du haut plus compacte, rien ne dépasse */
+@media (max-width: 480px) {
+  .nav-hamburger { padding: .75rem 1rem; }
+  .nav-logo-icon { width: 30px; height: 30px; font-size: .9rem; }
+  .nav-logo-text { font-size: 1.15rem; }
+}
+.nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 998; backdrop-filter: blur(2px); }
+.nav-overlay.open { display: block; }
+.drawer-header { padding: 1.4rem; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; justify-content: space-between; }
+.drawer-logo-text { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 900; color: #F5E6C4; }
+.drawer-logo-text span { color: #E8C98A; }
+.drawer-close { background: none; border: none; color: rgba(255,255,255,.5); font-size: 1.4rem; cursor: pointer; }
+.drawer-user { padding: 1rem 1.4rem; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: .8rem; }
+.drawer-avatar { width: 40px; height: 40px; border-radius: 50%; background: #C4501A; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; border: 2px solid rgba(255,255,255,.1); flex-shrink: 0; }
+.drawer-name { font-size: .9rem; font-weight: 600; color: #F5E6C4; }
+.drawer-role { font-size: .72rem; color: rgba(232,201,138,.4); margin-top: .1rem; }
+.drawer-woven { height: 4px; background: repeating-linear-gradient(90deg, #C4501A 0 10px, #D4922A 10px 20px, #2D6A4F 20px 30px, #E8C98A 30px 40px); }
+.drawer-section { padding: .6rem 1.4rem .2rem; font-size: .62rem; font-weight: 700; color: rgba(232,201,138,.25); text-transform: uppercase; letter-spacing: 1.5px; }
+.drawer-item { display: flex; align-items: center; gap: .8rem; padding: .8rem 1.4rem; color: rgba(245,230,196,.6); font-size: .9rem; text-decoration: none; transition: all .2s; border-left: 3px solid transparent; }
+.drawer-item:hover { color: #F5E6C4; background: rgba(255,255,255,.05); border-left-color: rgba(196,80,26,.4); }
+.drawer-item.active { color: #E8C98A; background: rgba(196,80,26,.2); border-left-color: #C4501A; font-weight: 500; }
+.drawer-item .di-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+.drawer-divider { height: 1px; background: rgba(255,255,255,.06); margin: .5rem 0; }
+.drawer-btn-primary { margin: .5rem 1.4rem; padding: .8rem 1rem; background: #C4501A; color: white; border: none; border-bottom: 3px solid #8B3210; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: .9rem; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; display: block; transition: all .2s; }
+.drawer-btn-primary:hover { background: #8B3210; }
+.drawer-btn-outline { margin: .3rem 1.4rem; padding: .75rem 1rem; background: transparent; color: rgba(245,230,196,.7); border: 1.5px solid rgba(255,255,255,.15); border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: .9rem; cursor: pointer; text-align: center; text-decoration: none; display: block; transition: all .2s; }
+.drawer-btn-outline:hover { border-color: rgba(255,255,255,.3); color: white; }
+.drawer-logout { margin: auto 1.4rem 1.4rem; padding: .75rem 1rem; background: rgba(196,80,26,.15); border: 1px solid rgba(196,80,26,.3); border-radius: 6px; color: rgba(232,201,138,.7); font-family: 'DM Sans', sans-serif; font-size: .88rem; cursor: pointer; display: flex; align-items: center; gap: .5rem; justify-content: center; transition: all .2s; width: calc(100% - 2.8rem); }
+.drawer-logout:hover { background: rgba(196,80,26,.3); color: #E8C98A; }
+</style>
+
+<nav class="nav-hamburger" id="mainNav">
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-icon">🪣</div>
+    <div class="nav-logo-text">Sen <span>Tolbi</span></div>
+  </a>
+  <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleDrawer()" aria-label="Ouvrir le menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="nav-overlay" id="navOverlay" onclick="closeDrawer()"></div>
+
+<div class="nav-drawer" id="navDrawer">
+  <div class="drawer-header">
+    <div class="drawer-logo-text">Sen <span>Tolbi</span></div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-woven"></div>
+  <div id="drawerUserSection"></div>
+  <div id="drawerNav"></div>
+</div>
+`;
+
+function initNav() {
+  document.body.insertAdjacentHTML('afterbegin', NAV_HTML);
+  // Add padding to body for fixed nav
+  document.body.style.paddingTop = '62px';
+  buildDrawer();
+}
+
+// ===== Outils communs (copiés de connexion.html) =====
+function echapper(t) {
+  return String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function pageDeSonEspace(type) {
+  if (type === 'acheteur') return 'dashboard-acheteur.html';
+  if (type === 'admin') return 'admin.html';
+  return 'dashboard-agriculteur.html';
+}
+
+async function lireProfil(authUser) {
+  try {
+    const { data, error } = await window._sb.from('utilisateurs').select('*').eq('id', authUser.id).maybeSingle();
+    if (!error && data) {
+      localStorage.setItem('sentolbi_user', JSON.stringify(data));
+      return data;
+    }
+  } catch (e) { /* réseau : on se rabat ci-dessous */ }
+  const meta = authUser.user_metadata || {};
+  const type = ['vendeur', 'acheteur'].includes(meta.type) ? meta.type : null;
+  return { id: authUser.id, email: authUser.email, prenom: meta.prenom || '', nom: meta.nom || '', type, sansProfil: true };
+}
+
+async function buildDrawer() {
+  let session = null;
+  try { ({ data: { session } } = await window._sb.auth.getSession()); } catch (e) {}
+  if (!session) localStorage.removeItem('sentolbi_user');
+  let user = session ? JSON.parse(localStorage.getItem('sentolbi_user') || '{}') : {};
+  if (session && !user.type) user = await lireProfil(session.user);
+  const isLoggedIn = !!session;
+  const dashLink = pageDeSonEspace(user.type);
+  const name = user.prenom ? (user.prenom + ' ' + (user.nom || '')) : (session?.user?.email || '');
+  const role = user.type === 'acheteur' ? 'Acheteur' : (user.type === 'vendeur' ? 'Vendeur' : (user.type === 'admin' ? 'Admin' : ''));
+  const roleLigne = [role, user.zone].filter(Boolean).join(' · ');
+
+  const userSection = document.getElementById('drawerUserSection');
+  const navSection = document.getElementById('drawerNav');
+
+  if (isLoggedIn) {
+    userSection.innerHTML = `
+      <div class="drawer-user">
+        <div class="drawer-avatar">${user.type === 'acheteur' ? '🛒' : '👨‍🌾'}</div>
+        <div>
+          <div class="drawer-name">${echapper(name)}</div>
+          <div class="drawer-role">${echapper(roleLigne)}</div>
+        </div>
+      </div>`;
+
+    navSection.innerHTML = `
+      <div class="drawer-section">Navigation</div>
+      <a href="index.html" class="drawer-item"><span class="di-icon">🏠</span> Accueil</a>
+      <a href="catalogue.html" class="drawer-item"><span class="di-icon">🛒</span> Catalogue produits</a>
+      <a href="${dashLink}" class="drawer-item"><span class="di-icon">📊</span> Mon tableau de bord</a>
+      <div class="drawer-divider"></div>
+      <button class="drawer-logout" onclick="logoutNav()">🚪 Se déconnecter</button>`;
+  } else {
+    userSection.innerHTML = `
+      <div style="padding:1.2rem 1.4rem; border-bottom:1px solid rgba(255,255,255,.08);">
+        <div style="font-size:.85rem; color:rgba(232,201,138,.5); margin-bottom:.8rem;">Bienvenue sur Sen Tolbi 🇸🇳</div>
+        <a href="inscription.html" class="drawer-btn-primary">Créer un compte</a>
+        <a href="connexion.html" class="drawer-btn-outline">Se connecter</a>
+      </div>`;
+
+    navSection.innerHTML = `
+      <div class="drawer-section">Navigation</div>
+      <a href="index.html" class="drawer-item"><span class="di-icon">🏠</span> Accueil</a>
+      <a href="catalogue.html" class="drawer-item"><span class="di-icon">🛒</span> Voir les produits</a>
+      <a href="inscription.html" class="drawer-item"><span class="di-icon">📝</span> S'inscrire gratuitement</a>
+      <a href="connexion.html" class="drawer-item"><span class="di-icon">🔑</span> Se connecter</a>`;
+  }
+}
+
+function toggleDrawer() {
+  const drawer = document.getElementById('navDrawer');
+  const overlay = document.getElementById('navOverlay');
+  const btn = document.getElementById('hamburgerBtn');
+  drawer.classList.toggle('open');
+  overlay.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+function closeDrawer() {
+  document.getElementById('navDrawer').classList.remove('open');
+  document.getElementById('navOverlay').classList.remove('open');
+  document.getElementById('hamburgerBtn').classList.remove('open');
+}
+
+async function logoutNav() {
+  await window._sb.auth.signOut();
+  localStorage.removeItem('sentolbi_user');
+  window.location.href = 'index.html';
+}
+
+// Même traduction que connexion.html (tâche 6)
+function traduireErreur(err) {
+  if (!err) return 'Une erreur est survenue. Réessayez dans un instant.';
+  const code = String(err.code || '');
+  const msg = String(err.message || err).toLowerCase();
+  if (code === 'invalid_credentials' || msg.includes('invalid login credentials'))
+    return 'E-mail ou mot de passe incorrect.';
+  if (code === 'email_not_confirmed' || msg.includes('email not confirmed'))
+    return "Votre adresse e-mail n'est pas encore confirmée.";
+  if (code === 'user_already_exists' || code === 'email_exists' || msg.includes('already registered') || msg.includes('already been registered'))
+    return 'Cette adresse e-mail est déjà utilisée. Connectez-vous ou choisissez une autre adresse.';
+  if (code === 'weak_password' || msg.includes('password should'))
+    return 'Mot de passe trop court ou trop simple (au moins 6 caractères).';
+  if (code === 'email_address_invalid' || msg.includes('unable to validate email') || (msg.includes('email') && msg.includes('invalid')))
+    return 'Adresse e-mail invalide.';
+  if (code.startsWith('over_') || err.status === 429 || msg.includes('rate limit') || msg.includes('too many'))
+    return "Trop d'essais en peu de temps. Patientez quelques minutes puis réessayez.";
+  if (err.name === 'AuthRetryableFetchError' || err.status === 0 || msg.includes('load failed') || msg.includes('failed to fetch') || msg.includes('network'))
+    return 'Problème de connexion internet. Vérifiez votre réseau et réessayez.';
+  if (msg.includes('row-level security'))
+    return "Cette action n'est pas autorisée pour ce compte.";
+  return 'Une erreur est survenue. Réessayez dans un instant.';
+}
+
+  initNav();
+
+  // ===== Page « Nouveau mot de passe » (tâche 8) =====
+  const btn = document.getElementById('btnEnregistrer');
+
+  function montrer(id) {
+    ['etatAttente', 'etatInvalide', 'formulaire'].forEach(x =>
+      document.getElementById(x).classList.toggle('cache', x !== id));
+  }
+
+  function afficherFormulaire() {
+    montrer('formulaire');
+    document.getElementById('sousTitre').textContent = 'Choisissez votre nouveau mot de passe.';
+    ['pwd1', 'pwd2'].forEach(id => document.getElementById(id).disabled = false);
+    btn.disabled = false;
+  }
+
+  // Lien non valable : formulaire caché ET désactivé
+  function lienInvalide(avecLien) {
+    lienValable = false;
+    ['pwd1', 'pwd2'].forEach(id => { const el = document.getElementById(id); el.value = ''; el.disabled = true; });
+    btn.disabled = true;
+    document.getElementById('sousTitre').textContent = 'Ce lien ne peut pas être utilisé.';
+    document.getElementById('texteInvalide').innerHTML = avecLien
+      ? "<strong>Ce lien n'est plus valable.</strong><br>Il a peut-être expiré ou déjà été utilisé (chaque lien ne sert qu'une fois).<br>Faites une nouvelle demande pour recevoir un autre e-mail."
+      : "<strong>Pour changer votre mot de passe, ouvrez le lien reçu par e-mail.</strong><br>Vous n'avez pas reçu d'e-mail ? Faites une demande ci-dessous.";
+    montrer('etatInvalide');
+  }
+
+  function afficherAlerte(texte) {
+    const el = document.getElementById('alertError');
+    el.textContent = '❌ ' + texte;
+    el.classList.add('show');
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function cacherAlerte() {
+    const el = document.getElementById('alertError');
+    el.textContent = '';
+    el.classList.remove('show');
+  }
+  function erreurChamp(id, texte) {
+    const input = document.getElementById(id);
+    const msg = document.getElementById('err-' + id);
+    input.classList.toggle('error', !!texte);
+    msg.textContent = texte || '';
+    msg.classList.toggle('show', !!texte);
+  }
+  function togglePwd(id, bouton) {
+    const input = document.getElementById(id);
+    input.type = input.type === 'password' ? 'text' : 'password';
+    bouton.textContent = input.type === 'password' ? '👁️' : '🙈';
+  }
+
+  // Que contient l'adresse d'arrivée ?
+  const urlAUnJeton = /access_token=|type=recovery|[?&#]code=|token_hash=/.test(URL_DEPART);
+  const urlAUneErreur = /error_code=|[?&#]error=/.test(URL_DEPART);
+
+  if (urlAUneErreur) {
+    lienInvalide(true);                 // ex. lien expiré renvoyé par Supabase
+  } else if (!urlAUnJeton) {
+    lienInvalide(false);                // page ouverte directement
+  } else {
+    // On laisse jusqu'à 10 s à Supabase pour vérifier le lien (réseau lent)
+    setTimeout(() => { if (!lienValable) lienInvalide(true); }, 10000);
+  }
+
+  async function enregistrer() {
+    if (btn.disabled || !lienValable) return;     // pas de double envoi
+    const p1 = document.getElementById('pwd1').value;
+    const p2 = document.getElementById('pwd2').value;
+    cacherAlerte();
+    erreurChamp('pwd1', !p1 ? 'Mot de passe obligatoire.' : (p1.length < 6 ? 'Au moins 6 caractères.' : ''));
+    erreurChamp('pwd2', !p2 ? 'Retapez le mot de passe.' : (p1 && p2 !== p1 ? 'Les deux mots de passe ne sont pas identiques.' : ''));
+    if (!p1 || p1.length < 6 || !p2 || p2 !== p1) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Enregistrement…';
+    const remettreBouton = () => { btn.disabled = false; btn.textContent = 'Enregistrer le mot de passe →'; };
+
+    let res;
+    try { res = await window._sb.auth.updateUser({ password: p1 }); }
+    catch (e) { res = { error: e }; }
+
+    if (res && res.error) {
+      const err = res.error;
+      const code = String(err.code || '');
+      const msg = String(err.message || err).toLowerCase();
+      if (code === 'same_password' || msg.includes('different from the old')) {
+        afficherAlerte('Ce mot de passe est déjà le vôtre. Choisissez-en un autre.');
+        remettreBouton();
+      } else if (code === 'session_not_found' || code === 'session_expired' || msg.includes('session missing') || err.status === 401 || err.status === 403) {
+        lienInvalide(true);
+      } else {
+        afficherAlerte(traduireErreur(err));
+        remettreBouton();
+      }
+      return;
+    }
+
+    // Succès : on ferme la session ouverte par le lien, pour que l'utilisateur
+    // se reconnecte avec son nouveau mot de passe sur la page de connexion.
+    try { await window._sb.auth.signOut({ scope: 'local' }); } catch (e) {}
+    localStorage.removeItem('sentolbi_user');
+    window.location.replace('connexion.html?reinit=ok');
+  }
+
+  // Le message rouge disparaît dès qu'on corrige le champ
+  ['pwd1', 'pwd2'].forEach(id => document.getElementById(id).addEventListener('input', () => erreurChamp(id, '')));
+  // Touche Entrée = enregistrer
+  ['pwd1', 'pwd2'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') enregistrer(); }));
+</script>
+</body>
+</html>
