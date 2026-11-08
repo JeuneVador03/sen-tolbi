@@ -295,6 +295,25 @@
   </div>
 </div>
 
+<!-- MODAL MODIFIER UN PRODUIT -->
+<div class="modal-overlay" id="modifModal" onclick="fermerModif(event)">
+  <div class="modal">
+    <div class="modal-title">✏️ Modifier le produit</div>
+    <div class="form-group"><label for="modifNom">Nom du produit *</label><input type="text" id="modifNom"/><div class="error-msg" id="err-modifNom"></div></div>
+    <div class="form-row-2">
+      <div class="form-group"><label for="modifCat">Catégorie *</label><select id="modifCat"></select><div class="error-msg" id="err-modifCat"></div></div>
+      <div class="form-group"><label for="modifUnite">Unité *</label><select id="modifUnite"></select><div class="error-msg" id="err-modifUnite"></div></div>
+    </div>
+    <div class="form-group"><label for="modifPrix">Prix (FCFA) *</label><input type="number" id="modifPrix" min="1" step="1" inputmode="numeric"/><div class="error-msg" id="err-modifPrix"></div></div>
+    <div class="form-group"><label for="modifDesc">Description <span style="color:#8B6B50;font-weight:300;text-transform:none;font-size:.7rem">(optionnel)</span></label><textarea id="modifDesc" rows="2"></textarea></div>
+    <div class="alert alert-error" id="modifError" role="alert"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fermerModif()">Annuler</button>
+      <button class="btn-save" id="btnModif" onclick="enregistrerModif()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL MON PROFIL -->
 <div class="modal-overlay" id="profilModal" onclick="fermerProfil(event)">
   <div class="modal">
@@ -413,6 +432,8 @@
     if(code==='23503') return "Ce produit a déjà été commandé : il ne peut pas être supprimé, car les commandes reçues doivent garder sa trace.";
     if(action==='stock' && (code==='23514' || code==='22P02' || code==='22003'))
       return "Ce stock n'est pas accepté : indiquez un nombre entier, 0 ou plus.";
+    if(action==='modification' && (code==='23514' || code==='22P02' || code==='22003' || code==='23502'))
+      return "Une des valeurs saisies n'est pas acceptée. Vérifiez le nom, le prix (nombre entier supérieur à 0), la catégorie et l'unité.";
     if(code==='23514' || code==='22P02' || code==='23502')
       return "Une des valeurs saisies n'est pas acceptée. Vérifiez le prix et la quantité (nombres entiers supérieurs à 0).";
     const verbe={
@@ -653,6 +674,7 @@
         <div class="product-price">${(parseInt(p.prix)||0).toLocaleString('fr-FR')} F/${unite}</div>
         <div class="product-actions">
           <button class="btn-text btn-vente" onclick="changerVente('${id}',${enVente})">${enVente?'Retirer du catalogue':'Remettre en vente'}</button>
+          <button class="btn-text btn-modifier" onclick="ouvrirModif('${id}')">Modifier</button>
           <button class="btn-text btn-stock" onclick="ouvrirStock('${id}')" aria-controls="stock-${id}">✏️ Modifier le stock</button>
           <button class="btn-icon" onclick="deleteProduct('${id}')" title="Supprimer" aria-label="Supprimer ${echapper(p.nom)}">🗑️</button>
         </div>
@@ -980,6 +1002,106 @@
     document.getElementById('prodDesc').value='';
     closeModal();
     showAlert('success','✅ Produit publié ! Il est maintenant visible par les acheteurs.');
+    await loadProduits();
+    loadCommandes();
+  }
+
+  // ===== Modifier un produit (nom, prix, unité, catégorie, description) =====
+  // Le stock et « en vente » ne sont pas envoyés : ils gardent leur valeur.
+  let produitEnModif=null;
+  const valeurModif=id=>document.getElementById(id).value;
+  const controlesModif={
+    modifNom:()=>valeurModif('modifNom').trim()?'':'Indiquez le nom du produit',
+    modifCat:()=>valeurModif('modifCat').trim()?'':'Choisissez une catégorie',
+    modifUnite:()=>valeurModif('modifUnite').trim()?'':'Choisissez une unité',
+    modifPrix:()=>{
+      const v=valeurModif('modifPrix').trim();
+      if(!v) return 'Indiquez le prix en FCFA';
+      return /^\d{1,9}$/.test(v) && parseInt(v,10)>0 ? '' : 'Le prix doit être un nombre entier supérieur à 0';
+    }
+  };
+  function afficherErreurModifChamp(id,msg){
+    document.getElementById(id).classList.toggle('error',!!msg);
+    const el=document.getElementById('err-'+id);
+    el.textContent=msg;
+    el.classList.toggle('show',!!msg);
+  }
+  function verifierChampModif(id){
+    const msg=controlesModif[id]();
+    afficherErreurModifChamp(id,msg);
+    return !msg;
+  }
+  function erreurModif(msg){
+    const el=document.getElementById('modifError');
+    el.textContent='❌ '+msg; el.classList.add('show');
+    el.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+  function cacherErreurModif(){ document.getElementById('modifError').classList.remove('show'); }
+
+  // Le message rouge disparaît dès que le champ est corrigé
+  Object.keys(controlesModif).forEach(id=>{
+    const corriger=()=>{
+      if(document.getElementById(id).classList.contains('error')) verifierChampModif(id);
+      cacherErreurModif();
+    };
+    document.getElementById(id).addEventListener('input',corriger);
+    document.getElementById(id).addEventListener('change',corriger);
+  });
+  document.getElementById('modifDesc').addEventListener('input',cacherErreurModif);
+
+  // Mêmes choix que le formulaire d'ajout. Une ancienne valeur absente de la liste est gardée.
+  function remplirMenuModif(idMenu,idModele,valeur){
+    const menu=document.getElementById(idMenu);
+    const actuelle=String(valeur ?? '');
+    menu.innerHTML=document.getElementById(idModele).innerHTML;
+    if(!actuelle.trim()) menu.insertBefore(new Option('Choisissez...',''),menu.firstChild);
+    else if(![...menu.options].some(o=>o.value===actuelle)) menu.add(new Option(actuelle));
+    menu.value=actuelle;
+  }
+
+  function ouvrirModif(id){
+    cacherMessageProduit(id);
+    const p=produitParId(id);
+    if(!p){ messageProduit(id,"Produit introuvable. Rechargez la page."); return; }
+    produitEnModif=p;
+    cacherErreurModif();
+    Object.keys(controlesModif).forEach(c=>afficherErreurModifChamp(c,''));
+    document.getElementById('modifNom').value=p.nom||'';
+    remplirMenuModif('modifCat','prodCat',p.categorie);
+    remplirMenuModif('modifUnite','prodUnite',p.unite);
+    document.getElementById('modifPrix').value=p.prix ?? '';
+    document.getElementById('modifDesc').value=p.description||'';
+    document.getElementById('modifModal').classList.add('open');
+  }
+  function fermerModif(e){if(!e||e.target===document.getElementById('modifModal'))document.getElementById('modifModal').classList.remove('open');}
+
+  async function enregistrerModif(){
+    cacherErreurModif();
+    const enErreur=Object.keys(controlesModif).filter(c=>!verifierChampModif(c));
+    if(enErreur.length){ document.getElementById(enErreur[0]).focus(); return; }
+    if(!produitEnModif){ erreurModif("Produit introuvable. Rechargez la page."); return; }
+
+    const valeurs={
+      nom:valeurModif('modifNom').trim(),
+      categorie:valeurModif('modifCat'),
+      unite:valeurModif('modifUnite'),
+      prix:parseInt(valeurModif('modifPrix'),10),
+      description:valeurModif('modifDesc').trim()||null
+    };
+
+    const btn=document.getElementById('btnModif');
+    btn.disabled=true; btn.textContent='Enregistrement...';
+    try{
+      const {data,error}=await window._sb.from('produits').update(valeurs).eq('id',produitEnModif.id).select('id');
+      if(error){ erreurModif(messageErreur(error,'modification')); return; }
+      if(!data || data.length===0){ erreurModif("Le produit n'a pas été modifié : votre compte n'a pas l'autorisation de le faire. Rechargez la page et réessayez."); return; }
+    }catch(e){
+      erreurModif(messageErreur(e,'modification')); return;
+    }finally{
+      btn.disabled=false; btn.textContent='Enregistrer';
+    }
+    fermerModif();
+    showAlert('success','✅ Produit modifié.');
     await loadProduits();
     loadCommandes();
   }
