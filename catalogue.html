@@ -43,16 +43,17 @@
     /* LAYOUT */
     .layout{display:flex;min-height:calc(100vh - 160px);}
 
-    /* FILTERS */
-    .filters{width:210px;flex-shrink:0;background:var(--white);border-right:1px solid rgba(196,80,26,.1);padding:1.2rem;position:sticky;top:57px;align-self:flex-start;max-height:calc(100vh - 57px);overflow-y:auto;}
-    .filter-title{font-size:.68rem;font-weight:700;color:#8B6B50;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:.7rem;padding-bottom:.4rem;border-bottom:1px solid rgba(196,80,26,.1);}
-    .filter-section{margin-bottom:1.3rem;}
-    .filter-option{display:flex;align-items:center;gap:.6rem;padding:.35rem 0;cursor:pointer;font-size:.85rem;color:var(--baobab);}
-    .filter-option input[type="checkbox"]{width:15px;height:15px;accent-color:var(--terracotta);cursor:pointer;flex-shrink:0;}
+    /* FILTRE PAR CATÉGORIE : une rangée de boutons qui défile sur téléphone */
+    .cat-chips{display:flex;gap:.5rem;overflow-x:auto;padding:.1rem 0 .6rem;margin-bottom:.6rem;scrollbar-width:thin;-webkit-overflow-scrolling:touch;}
+    .cat-chips:empty{display:none;}
+    .chip{flex-shrink:0;display:inline-flex;align-items:center;gap:.35rem;padding:.5rem .9rem;min-height:38px;border-radius:999px;border:1.5px solid rgba(61,43,26,.18);background:var(--white);color:var(--baobab);font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;cursor:pointer;white-space:nowrap;transition:border-color .15s;-webkit-tap-highlight-color:transparent;}
+    .chip:hover{border-color:var(--terracotta);}
+    .chip[aria-pressed="true"]{background:var(--terracotta);border-color:var(--terracotta-dark);color:white;}
+    .chip-count{font-size:.72rem;opacity:.75;}
 
     /* PRODUCTS */
-    .products-area{flex:1;padding:1.2rem 1.5rem;}
-    .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+    .products-area{flex:1;min-width:0;padding:1.2rem 1.5rem;}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem;}
     .results-count{font-size:.85rem;color:#6B4F35;}
     .results-count strong{color:var(--baobab);font-weight:600;}
     .sort-select{padding:.4rem .7rem;border:1.5px solid rgba(61,43,26,.15);border-radius:5px;background:var(--white);font-family:'DM Sans',sans-serif;font-size:.82rem;}
@@ -88,12 +89,20 @@
     .btn-cart{width:100%;padding:.6rem;background:var(--terracotta);color:white;border:none;border-bottom:2px solid var(--terracotta-dark);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.4rem;}
     .btn-cart:hover{background:var(--terracotta-dark);}
     .btn-cart.added{background:var(--green);border-color:#1a4a35;}
+    .btn-cart:disabled{background:#B9A68E;border-bottom-color:#8B7760;cursor:not-allowed;}
+
+    /* PRODUIT ÉPUISÉ */
+    .product-card.epuise .product-img{filter:grayscale(.85);opacity:.6;}
+    .product-card.epuise:hover{transform:none;box-shadow:none;}
+    .badge-epuise{display:inline-block;background:var(--baobab);color:var(--sand-light);font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;padding:.2rem .5rem;border-radius:4px;}
+    .product-qty.epuise{color:#8B6B50;}
 
     /* EMPTY */
     .empty-state{text-align:center;padding:4rem 2rem;}
     .empty-icon{font-size:4rem;margin-bottom:1rem;}
     .empty-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--baobab);margin-bottom:.6rem;}
     .empty-sub{font-size:.9rem;color:#8B6B50;font-weight:300;line-height:1.6;}
+    .btn-reset{margin-top:1.2rem;padding:.7rem 1.2rem;background:var(--terracotta);color:white;border:none;border-bottom:2px solid var(--terracotta-dark);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;}
     .loading{text-align:center;padding:4rem;color:#8B6B50;}
 
     /* CART DRAWER */
@@ -165,7 +174,7 @@
     .qty-btn:disabled,.ci-qty-btn:disabled{opacity:.35;cursor:not-allowed;}
     .modal{max-height:90vh;overflow-y:auto;}
 
-    @media(max-width:768px){.filters{display:none;}.products-area{padding:.8rem 1rem;}.topnav{padding:.8rem 1rem;}.hero-banner{padding:1.5rem;}.hero-stats{display:none;}}
+    @media(max-width:768px){.products-area{padding:.8rem 1rem;}.topnav{padding:.8rem 1rem;}.hero-banner{padding:1.5rem;}.hero-stats{display:none;}}
     /* Téléphone (360 px) : la recherche passe sur sa propre ligne, la barre du haut n'est plus coupée */
     @media(max-width:600px){
       .topnav{flex-wrap:wrap;gap:.6rem .4rem;padding:.7rem .75rem;}
@@ -177,6 +186,11 @@
       .search-wrap{order:3;flex:1 1 100%;max-width:none;}
       .cart-drawer{width:100%;max-width:360px;}
       .modal{padding:1.3rem;}
+      .products-grid{grid-template-columns:1fr;gap:.9rem;}
+      .product-img{height:100px;}
+      .qty-btn{width:36px;height:36px;font-size:1.05rem;}
+      .btn-cart{padding:.75rem;font-size:.88rem;}
+      .empty-state{padding:2.5rem 1rem;}
       /* iPhone : texte des champs à 16 px, sinon Safari zoome la page au toucher */
       input,select,textarea{font-size:16px;}
     }
@@ -192,7 +206,7 @@
   </a>
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
-    <input type="text" id="searchInput" placeholder="Rechercher un produit..." oninput="filterProducts(this.value)"/>
+    <input type="search" id="searchInput" placeholder="Rechercher un produit..." aria-label="Rechercher un produit" autocomplete="off" enterkeyhint="search" oninput="setSearch(this.value)" onkeydown="if(event.key==='Enter')this.blur()"/>
   </div>
   <div class="nav-right" id="navRight">
     <button class="cart-btn" onclick="toggleCart()">
@@ -211,25 +225,12 @@
 </div>
 
 <div class="layout">
-  <!-- FILTERS -->
-  <aside class="filters">
-    <div class="filter-section">
-      <div class="filter-title">🌿 Catégorie</div>
-      <label class="filter-option"><input type="checkbox" checked onchange="applyFilters()"/> Légumes</label>
-      <label class="filter-option"><input type="checkbox" checked onchange="applyFilters()"/> Fruits</label>
-      <label class="filter-option"><input type="checkbox" checked onchange="applyFilters()"/> Céréales</label>
-      <label class="filter-option"><input type="checkbox" checked onchange="applyFilters()"/> Légumineuses</label>
-      <label class="filter-option"><input type="checkbox" checked onchange="applyFilters()"/> Viande / Volaille</label>
-      <label class="filter-option"><input type="checkbox" checked onchange="applyFilters()"/> Produits laitiers</label>
-      <label class="filter-option"><input type="checkbox" checked onchange="applyFilters()"/> Épices</label>
-    </div>
-  </aside>
-
   <!-- PRODUCTS -->
   <div class="products-area">
+    <div class="cat-chips" id="catChips" role="group" aria-label="Filtrer par catégorie"></div>
     <div class="toolbar">
       <div class="results-count" id="resultsCount">Chargement...</div>
-      <select class="sort-select" onchange="sortProducts(this.value)">
+      <select class="sort-select" id="sortSelect" aria-label="Trier les produits" onchange="setSort(this.value)">
         <option value="recent">Les plus récents</option>
         <option value="prix_asc">Prix croissant</option>
         <option value="prix_desc">Prix décroissant</option>
@@ -309,7 +310,11 @@
 
   const emojis={'Légumes':'🥬','Fruits':'🍎','Céréales':'🌾','Légumineuses':'🥜','Viande / Volaille':'🥩','Produits laitiers':'🥛','Épices':'🌿'};
   const bgs=['bg1','bg2','bg3','bg4','bg5','bg6'];
+  // Même liste et même ordre que le formulaire « Ajouter un produit » de l'espace vendeur
+  const categoriesOrdre=['Légumes','Fruits','Céréales','Légumineuses','Viande / Volaille','Produits laitiers','Épices'];
   let allProducts=[], cart=[], currentUser=null, cartOpen=false;
+  // État des filtres : la recherche, la catégorie et le tri s'appliquent ensemble
+  let recherche='', categorieChoisie='', triChoisi='recent';
 
   // INIT
   async function init(){
@@ -356,60 +361,142 @@
     return parDefaut||"La commande n'a pas pu être enregistrée. Réessayez ou contactez l'équipe Sen Tolbi.";
   }
 
-  // LOAD PRODUCTS : seulement les produits en vente avec du stock
+  // LOAD PRODUCTS : tous les produits en vente, y compris épuisés (affichés « Épuisé »).
+  // Les produits retirés par le vendeur (en_vente = false) ne sont pas affichés.
   async function loadProducts(){
     const {data,error}=await sb.from('produits')
       .select('*,utilisateurs:vendeurs_publics(id,prenom,nom,zone)')
       .eq('en_vente',true)
-      .gt('quantite',0)
       .order('created_at',{ascending:false});
     if(error){
       console.error(error);
       document.getElementById('productsContainer').innerHTML=`<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Impossible de charger les produits</div><div class="empty-sub">${esc(messageErreur(error,"Le catalogue n'a pas pu être chargé. Rechargez la page dans un instant."))}</div></div>`;
       document.getElementById('resultsCount').innerHTML='<strong>Erreur de chargement</strong>';
       document.getElementById('heroStats').textContent='';
+      document.getElementById('catChips').innerHTML='';
       return;
     }
     allProducts=data||[];
     syncCartWithStock();
+    const dispo=allProducts.filter(p=>p.quantite>0).length;
+    document.getElementById('heroStats').textContent=dispo+' produit(s) disponible(s)';
+    // La catégorie choisie n'existe plus (produit retiré) : on revient à « Toutes »
+    if(categorieChoisie&&!allProducts.some(p=>p.categorie===categorieChoisie))categorieChoisie='';
+    renderChips();
+    applyAll();
+  }
+
+  // Minuscules et sans accents : « tomate » trouve « Tomaté », « epice » trouve « Épices »
+  function normaliser(t){
+    return String(t??'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+  }
+
+  // Nom du vendeur sans « null » quand le nom de famille manque
+  function nomVendeur(v){
+    if(!v)return 'Producteur';
+    return [v.prenom,v.nom].filter(x=>x&&String(x).trim()).join(' ')||'Producteur';
+  }
+  // Zone réelle du vendeur. Vide ou « Autre » = zone non précisée : on n'affiche rien.
+  function zoneVendeur(v){
+    const z=String(v?.zone??'').trim();
+    return (z&&z.toLowerCase()!=='autre')?z:'';
+  }
+
+  // Boutons de catégorie : seulement les catégories qui ont au moins un produit
+  function renderChips(){
+    const el=document.getElementById('catChips');
+    if(allProducts.length===0){el.innerHTML='';return;}
+    const compte={};
+    allProducts.forEach(p=>{compte[p.categorie]=(compte[p.categorie]||0)+1;});
+    const cats=Object.keys(compte).sort((a,b)=>{
+      const ia=categoriesOrdre.indexOf(a), ib=categoriesOrdre.indexOf(b);
+      return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b,'fr');
+    });
+    const chip=(val,label,n)=>`<button type="button" class="chip" aria-pressed="${categorieChoisie===val}" data-cat="${esc(val)}">${val?(emojis[val]||'🌿')+' ':''}${esc(label)} <span class="chip-count">${n}</span></button>`;
+    el.innerHTML=chip('','Toutes',allProducts.length)+cats.map(c=>chip(c,c,compte[c])).join('');
+    el.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>setCategorie(b.dataset.cat)));
+  }
+
+  function setSearch(q){recherche=q;applyAll();}
+  function setSort(v){triChoisi=v;applyAll();}
+  function setCategorie(c){
+    categorieChoisie=c;
+    document.querySelectorAll('#catChips .chip').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.cat===c)));
+    applyAll();
+  }
+  function resetFiltres(){
+    recherche='';
+    document.getElementById('searchInput').value='';
+    setCategorie('');
+  }
+
+  // Applique ensemble recherche + catégorie + tri. Les produits épuisés passent en dernier.
+  function applyAll(){
     if(allProducts.length===0){showEmpty();return;}
-    document.getElementById('heroStats').textContent=allProducts.length+' produit(s) disponible(s)';
-    renderProducts(allProducts);
+    const q=normaliser(recherche);
+    let liste=allProducts.filter(p=>{
+      if(categorieChoisie&&p.categorie!==categorieChoisie)return false;
+      if(!q)return true;
+      const texte=normaliser([p.nom,p.categorie,nomVendeur(p.utilisateurs),zoneVendeur(p.utilisateurs)].join(' '));
+      return q.split(/\s+/).every(mot=>texte.includes(mot));
+    });
+    if(triChoisi==='prix_asc')liste.sort((a,b)=>a.prix-b.prix);
+    if(triChoisi==='prix_desc')liste.sort((a,b)=>b.prix-a.prix);
+    liste.sort((a,b)=>(a.quantite>0?0:1)-(b.quantite>0?0:1)); // tri stable : l'ordre choisi est gardé
+    renderProducts(liste);
   }
 
   function renderProducts(products){
     const container=document.getElementById('productsContainer');
-    document.getElementById('resultsCount').innerHTML=`<strong>${products.length} produit(s)</strong> disponible(s)`;
-    if(products.length===0){showEmpty();return;}
+    if(products.length===0){showNoResult();return;}
+    const epuises=products.filter(p=>p.quantite<=0).length;
+    const dispo=products.length-epuises;
+    document.getElementById('resultsCount').innerHTML=`<strong>${dispo} produit(s)</strong> disponible(s)`+(epuises?` · ${epuises} épuisé(s)`:'');
     container.innerHTML=`<div class="products-grid">`+
-      products.map((p,i)=>`
-        <div class="product-card" id="card-${p.id}">
+      products.map((p,i)=>{
+        const epuise=p.quantite<=0;
+        const zone=zoneVendeur(p.utilisateurs);
+        return `
+        <div class="product-card${epuise?' epuise':''}" id="card-${p.id}">
           <div class="product-img ${bgs[i%bgs.length]}">${emojis[p.categorie]||'🌿'}</div>
           <div class="product-body">
             <div class="product-cat">${esc(p.categorie)}</div>
             <div class="product-name">${esc(p.nom)}</div>
-            <div class="farmer-info">👨‍🌾 ${p.utilisateurs?esc(p.utilisateurs.prenom+' '+p.utilisateurs.nom):'Producteur'} · ${esc(p.utilisateurs?.zone||'Dakar')}</div>
+            <div class="farmer-info">👨‍🌾 ${esc(nomVendeur(p.utilisateurs))}${zone?' · 📍 '+esc(zone):''}</div>
             <div class="product-footer">
               <div class="product-price">${p.prix.toLocaleString('fr-FR')} F <span class="product-unit">/${esc(p.unite)}</span></div>
-              <div class="product-qty">✅ ${p.quantite} ${esc(p.unite)}</div>
+              ${epuise?`<span class="badge-epuise">Épuisé</span>`:`<div class="product-qty">✅ ${p.quantite} ${esc(p.unite)}</div>`}
             </div>
+            ${epuise?'':`
             <div class="qty-selector">
               <span class="qty-label">Qté :</span>
               <div class="qty-controls">
-                <button class="qty-btn" onclick="changeQty('${p.id}',-1)">−</button>
+                <button class="qty-btn" onclick="changeQty('${p.id}',-1)" aria-label="Diminuer la quantité">−</button>
                 <span class="qty-val" id="qty-${p.id}">1</span>
-                <button class="qty-btn" onclick="changeQty('${p.id}',1)">+</button>
+                <button class="qty-btn" onclick="changeQty('${p.id}',1)" aria-label="Augmenter la quantité">+</button>
               </div>
-            </div>
-            <button class="btn-cart" id="btn-${p.id}" onclick="addToCart('${p.id}')">🛒 Ajouter au panier</button>
+            </div>`}
+            ${epuise
+              ?`<button class="btn-cart" id="btn-${p.id}" disabled aria-disabled="true">Épuisé</button>`
+              :`<button class="btn-cart" id="btn-${p.id}" onclick="addToCart('${p.id}')">🛒 Ajouter au panier</button>`}
           </div>
-        </div>`).join('')+`</div>`;
+        </div>`;}).join('')+`</div>`;
   }
 
+  // Aucun produit en vente sur tout le site
   function showEmpty(){
     document.getElementById('productsContainer').innerHTML=`<div class="empty-state"><div class="empty-icon">🌱</div><div class="empty-title">Aucun produit disponible</div><div class="empty-sub">Les vendeurs n'ont pas encore publié de produits. Revenez bientôt !</div></div>`;
     document.getElementById('resultsCount').innerHTML='<strong>0 produit</strong>';
     document.getElementById('heroStats').textContent='0 produit disponible';
+  }
+
+  // Des produits existent, mais aucun ne correspond à la recherche ou à la catégorie
+  function showNoResult(){
+    const q=recherche.trim();
+    const quoi=q?`pour «&nbsp;${esc(q)}&nbsp;»`:'';
+    const ou=categorieChoisie?` dans «&nbsp;${esc(categorieChoisie)}&nbsp;»`:'';
+    document.getElementById('productsContainer').innerHTML=`<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">Aucun produit trouvé</div><div class="empty-sub">Aucun produit ${quoi}${ou}.<br>Vérifiez l'orthographe ou essayez un autre mot.</div><button type="button" class="btn-reset" onclick="resetFiltres()">Voir tous les produits</button></div>`;
+    document.getElementById('resultsCount').innerHTML='<strong>0 produit</strong> trouvé';
   }
 
   // Stock restant pour un produit, en tenant compte de ce qui est déjà dans le panier
@@ -433,7 +520,7 @@
   // CART
   function addToCart(id){
     const product=allProducts.find(p=>p.id===id);
-    if(!product)return;
+    if(!product||product.quantite<=0)return;
     const btn=document.getElementById('btn-'+id);
     const reste=resteDisponible(id);
     if(reste<=0){
@@ -608,23 +695,6 @@
     cart=[];
     updateCart();
     loadProducts();
-  }
-
-  function filterProducts(q){
-    const f=allProducts.filter(p=>p.nom.toLowerCase().includes(q.toLowerCase())||p.categorie.toLowerCase().includes(q.toLowerCase()));
-    renderProducts(f);
-  }
-
-  function sortProducts(val){
-    let s=[...allProducts];
-    if(val==='prix_asc')s.sort((a,b)=>a.prix-b.prix);
-    if(val==='prix_desc')s.sort((a,b)=>b.prix-a.prix);
-    renderProducts(s);
-  }
-
-  function applyFilters(){
-    const checked=Array.from(document.querySelectorAll('.filter-option input:checked')).map(i=>i.parentElement.textContent.trim());
-    renderProducts(allProducts.filter(p=>checked.some(c=>c.includes(p.categorie))));
   }
 
   async function logout(){
