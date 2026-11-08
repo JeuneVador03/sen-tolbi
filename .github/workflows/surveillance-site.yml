@@ -1,0 +1,153 @@
+# Surveillance du site
+# Chaque jour, cette tâche vérifie que :
+#   1. les 6 pages du site répondent chez Netlify (code 200 et vraie page Sen Tolbi) ;
+#   2. le domaine sen-tolbi.com répond (Cloudflare) ;
+#   3. la base Supabase répond (lecture d'une ligne de produits) ;
+#   4. le service de connexion Supabase (Auth) répond.
+#
+# Pourquoi les pages sont lues sur l'adresse Netlify (teal-selkie-01686f.netlify.app) :
+# Cloudflare présente une vérification « Just a moment... » (code 403) aux robots de
+# GitHub. Le contenu des pages est donc vérifié directement chez Netlify, et pour
+# sen-tolbi.com on vérifie que Cloudflare répond. Si un jour un secret GitHub
+# SURVEILLANCE_JETON existe et qu'une règle Cloudflare laisse passer l'en-tête
+# X-Sen-Tolbi-Surveillance avec ce jeton, la page d'accueil est aussi vérifiée en
+# entier sur sen-tolbi.com (code 200 obligatoire).
+# Si une seule vérification échoue, la tâche échoue (croix rouge) et GitHub envoie
+# un e-mail. Le résumé de chaque lancement liste ce qui marche et ce qui ne marche pas.
+#
+# Elle complète « Anti-pause Supabase » (anti-pause-supabase.yml), qui reste en place.
+#
+# Faux échec pour tester l'e-mail : onglet Actions > Surveillance du site >
+# Run workflow > cocher « Simuler une panne » > Run workflow. La tâche vérifie alors
+# en plus une page qui n'existe pas, donc elle échoue exprès. Le site n'est pas touché.
+#
+# La clé utilisée est la clé publishable, déjà visible dans le code public des pages :
+# elle n'est pas secrète. Si elle change, la changer ici, dans anti-pause-supabase.yml
+# ET dans les pages. Ne jamais mettre ici la clé service_role ni un mot de passe.
+
+name: Surveillance du site
+
+on:
+  schedule:
+    # Tous les jours à 07:43 UTC, soit 07:43 à Dakar
+    - cron: '43 7 * * *'
+  # Bouton « Run workflow » dans l'onglet Actions (après fusion dans main)
+  workflow_dispatch:
+    inputs:
+      simuler_panne:
+        description: 'Simuler une panne (faux échec pour tester l’e-mail)'
+        type: boolean
+        default: false
+  # Essai automatique dans la PR quand ce fichier change
+  pull_request:
+    paths:
+      - '.github/workflows/surveillance-site.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verifier-le-site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NETLIFY: https://teal-selkie-01686f.netlify.app
+      DOMAINE: https://sen-tolbi.com
+      JETON: ${{ secrets.SURVEILLANCE_JETON }}
+      PAGES: >-
+        index.html
+        catalogue.html
+        connexion.html
+        inscription.html
+        dashboard-acheteur.html
+        dashboard-agriculteur.html
+      SUPABASE_URL: https://hrhnawzhxwahqkhvxomr.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_8MOWd0KD2jgcV1aN3VaPzA_RfBQLEHf
+      SIMULER_PANNE: ${{ github.event_name == 'workflow_dispatch' && inputs.simuler_panne }}
+      UA: 'SenTolbi-Surveillance/1.0 (GitHub Actions)'
+    steps:
+      - name: Vérifier les pages et la base
+        run: |
+          set -u
+          echo "## Surveillance du site — $(TZ=Africa/Dakar date '+%d/%m/%Y %H:%M') (heure de Dakar)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Vérification | Résultat | Détail |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          pannes=0
+
+          ok()    { echo "OK    $1 ($2)"; echo "| $1 | ✅ OK | $2 |" >> "$GITHUB_STEP_SUMMARY"; }
+          panne() { echo "::error title=$1::$2"; echo "| $1 | ❌ Panne | $2 |" >> "$GITHUB_STEP_SUMMARY"; pannes=$((pannes+1)); }
+
+          # appel URL [en-têtes curl…] : écrit la réponse dans reponse.txt et affiche le code HTTP
+          appel() {
+            url="$1"; shift
+            curl -sS -L -o reponse.txt -w '%{http_code}' \
+              --retry 3 --retry-delay 15 --retry-all-errors --max-time 30 \
+              -A "$UA" "$@" "$url" 2>erreur.txt || true
+          }
+
+          liste="$PAGES"
+          if [ "$SIMULER_PANNE" = "true" ]; then
+            echo "::warning title=Faux échec volontaire::« Simuler une panne » est coché : la page panne-simulee.html n'existe pas, la tâche va échouer exprès."
+            liste="$liste panne-simulee.html"
+          fi
+
+          # 1. Les pages du site
+          for page in $liste; do
+            code=$(appel "$NETLIFY/$page")
+            if [ "$code" != "200" ]; then
+              panne "Page $page" "Code HTTP $code. $(tail -n 1 erreur.txt 2>/dev/null | head -c 150)"
+            elif ! grep -q 'Sen Tolbi' reponse.txt; then
+              panne "Page $page" "Code 200 mais ce n'est pas une page Sen Tolbi (page d'erreur ou de blocage ?)."
+            else
+              ok "Page $page" "code 200, $(wc -c < reponse.txt) octets"
+            fi
+          done
+
+          # 2. Le domaine sen-tolbi.com (Cloudflare)
+          if [ -n "$JETON" ]; then
+            code=$(appel "$DOMAINE/" -H "X-Sen-Tolbi-Surveillance: $JETON")
+            if [ "$code" = "200" ] && grep -q 'Sen Tolbi' reponse.txt; then
+              ok "Domaine sen-tolbi.com" "page d'accueil complète, code 200"
+            else
+              panne "Domaine sen-tolbi.com" "Code HTTP $code avec le jeton : la règle Cloudflare ou le site ne marche pas."
+            fi
+          else
+            code=$(curl -sS -o reponse.txt -D entetes.txt -w '%{http_code}' \
+              --retry 3 --retry-delay 15 --retry-all-errors --max-time 30 \
+              -A "$UA" "$DOMAINE/" 2>erreur.txt || true)
+            if [ "$code" = "200" ] && grep -q 'Sen Tolbi' reponse.txt; then
+              ok "Domaine sen-tolbi.com" "page d'accueil complète, code 200"
+            elif [ "$code" = "403" ] && grep -qi '^cf-mitigated: challenge' entetes.txt; then
+              ok "Domaine sen-tolbi.com" "Cloudflare répond (vérification anti-robots, normal pour GitHub)"
+            else
+              panne "Domaine sen-tolbi.com" "Code HTTP $code. $(tail -n 1 erreur.txt 2>/dev/null | head -c 150) Vérifier Cloudflare (DNS, SSL) et Netlify."
+            fi
+          fi
+
+          # 3. La base : lecture d'une ligne de produits
+          code=$(appel "$SUPABASE_URL/rest/v1/produits?select=id&limit=1" -H "apikey: $SUPABASE_PUBLISHABLE_KEY")
+          if [ "$code" != "200" ]; then
+            panne "Base Supabase" "Code HTTP $code. Le projet est peut-être en pause : ouvrir https://supabase.com/dashboard et cliquer sur « Resume project »."
+          elif ! jq -e 'type == "array"' reponse.txt > /dev/null 2>&1; then
+            panne "Base Supabase" "Code 200 mais pas une liste de produits."
+          else
+            ok "Base Supabase" "lecture de produits OK"
+          fi
+
+          # 4. Le service de connexion (Auth)
+          code=$(appel "$SUPABASE_URL/auth/v1/health" -H "apikey: $SUPABASE_PUBLISHABLE_KEY")
+          if [ "$code" != "200" ]; then
+            panne "Connexion Supabase (Auth)" "Code HTTP $code : la connexion et l'inscription ne marchent sans doute pas."
+          else
+            ok "Connexion Supabase (Auth)" "service de connexion OK"
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$pannes" -gt 0 ]; then
+            echo "**$pannes vérification(s) en panne.**" >> "$GITHUB_STEP_SUMMARY"
+            echo "$pannes vérification(s) en panne."
+            exit 1
+          fi
+          echo "**Tout fonctionne.**" >> "$GITHUB_STEP_SUMMARY"
+          echo "Tout fonctionne."
