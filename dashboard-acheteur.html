@@ -84,6 +84,13 @@
     .order-rows dt{color:#8B6B50;}
     .order-rows dd{color:var(--text);text-align:right;overflow-wrap:anywhere;}
     .order-total{font-weight:700;color:var(--terracotta);}
+    /* Livraison, adresse et note : bloc pleine largeur, texte aligné à gauche (lisible sur téléphone) */
+    .order-delivery{margin-top:.8rem;padding-top:.7rem;border-top:1px dashed rgba(45,106,79,.2);display:flex;flex-direction:column;gap:.45rem;font-size:.83rem;}
+    .order-delivery-line{display:flex;gap:.5rem;align-items:flex-start;line-height:1.45;}
+    .order-delivery-line .ico{flex-shrink:0;width:1.2rem;text-align:center;}
+    .order-delivery-line .lbl{display:block;font-size:.7rem;color:#8B6B50;text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
+    .order-delivery-line .val{color:var(--text);overflow-wrap:anywhere;white-space:pre-line;}
+    .order-delivery-line .val.vide{color:#8B6B50;font-style:italic;}
     .order-error{background:#FDECEA;border:1px solid rgba(196,80,26,.35);color:var(--terracotta-dark);border-radius:6px;padding:.9rem 1rem;font-size:.88rem;line-height:1.5;}
 
     /* Téléphone (360 px) : la barre du haut passe sur deux lignes, les boutons ne sont plus coupés */
@@ -116,7 +123,7 @@
       <div class="user-avatar">🛒</div>
       <div>
         <div class="user-name" id="userName">Mon compte</div>
-        <div class="user-role">Acheteur · Dakar</div>
+        <div class="user-role" id="userRole">Acheteur</div>
       </div>
     </div>
     <div class="banner-actions">
@@ -203,7 +210,9 @@
     if(user.type==='vendeur'){window.location.replace('dashboard-agriculteur.html');return;}
 
     if(user.prenom) document.getElementById('userName').textContent=user.prenom+' '+(user.nom||'');
-    document.querySelector('.user-role').textContent='Acheteur'+(user.zone?' · '+user.zone:'');
+    // Zone réelle du profil ; si elle est vide, on écrit seulement « Acheteur » (jamais une zone inventée).
+    const zone=String(user.zone??'').trim();
+    document.getElementById('userRole').textContent='Acheteur'+(zone?' · '+zone:'');
     loadCommandes(session.user.id);
     loadProduits();
   }
@@ -272,6 +281,13 @@
       const montant=Number(c.montant_total)||0, commission=Number(c.commission)||0;
       const statut=libellesStatut[c.statut]||c.statut||'—';
       const livraison=libellesLivraison[c.mode_livraison]||'Non précisé';
+      const adresse=String(c.adresse_livraison??'').trim();
+      const note=String(c.note_acheteur??'').trim();
+      // Adresse : obligatoire pour une livraison, facultative pour un retrait (affichée seulement si remplie).
+      let ligneAdresse='';
+      if(adresse) ligneAdresse=ligne('📍','Adresse',esc(adresse));
+      else if(c.mode_livraison==='livraison') ligneAdresse=ligne('📍','Adresse','Non indiquée',true);
+      const ligneNote=note?ligne('📝','Votre note',esc(note)):'';
       return `<article class="order">
         <div class="order-top">
           <div>
@@ -286,12 +302,19 @@
           <dt>Montant</dt><dd>${fcfa(montant)}</dd>
           <dt>Commission Sen Tolbi</dt><dd>${fcfa(commission)}</dd>
           <dt>Total</dt><dd class="order-total">${fcfa(montant+commission)}</dd>
-          <dt>Mode</dt><dd>${esc(livraison)}</dd>
-          <dt>Adresse</dt><dd>${c.adresse_livraison?esc(c.adresse_livraison):'—'}</dd>
-          <dt>Note</dt><dd>${c.note_acheteur?esc(c.note_acheteur):'—'}</dd>
         </dl>
+        <div class="order-delivery">
+          ${ligne({retrait:'🏪',livraison:'🚚'}[c.mode_livraison]||'📦','Mode de réception',esc(livraison),!libellesLivraison[c.mode_livraison])}
+          ${ligneAdresse}
+          ${ligneNote}
+        </div>
       </article>`;
     }).join('')+`</div>`;
+  }
+
+  // Une ligne du bloc livraison (le texte reçu est déjà échappé)
+  function ligne(ico,label,valeurHtml,vide){
+    return `<div class="order-delivery-line"><span class="ico">${ico}</span><div><span class="lbl">${label}</span><span class="val${vide?' vide':''}">${valeurHtml}</span></div></div>`;
   }
 
   async function loadProduits(){
