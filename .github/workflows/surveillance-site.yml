@@ -55,6 +55,14 @@ jobs:
       SIMULER_PANNE: ${{ github.event_name == 'workflow_dispatch' && inputs.simuler_panne }}
       UA: 'SenTolbi-Surveillance/1.0 (GitHub Actions)'
     steps:
+      - name: Diagnostic temporaire (à retirer)
+        run: |
+          for ua in "SenTolbi-Surveillance/1.0 (GitHub Actions)" "curl/8.5.0" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"; do
+            echo "=== UA: $ua"
+            curl -sS -o corps.txt -D - -A "$ua" https://sen-tolbi.com/index.html | grep -iE '^(HTTP|server|cf-|x-nf|content-type)' || true
+            head -c 300 corps.txt; echo
+          done
+          curl -sS -o /dev/null -D - https://teal-selkie-01686f.netlify.app/index.html | grep -iE '^(HTTP|server)' || true
       - name: Vérifier les pages et la base
         run: |
           set -u
