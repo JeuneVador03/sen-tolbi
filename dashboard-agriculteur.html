@@ -96,6 +96,7 @@
     .order-item:last-child{border-bottom:none;}
     .order-top{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;}
     .order-product{font-weight:500;font-size:.9rem;color:var(--baobab);overflow-wrap:anywhere;}
+    .order-buyer{font-size:.8rem;color:#6B4F35;margin-top:.15rem;overflow-wrap:anywhere;}
     .order-date{font-size:.72rem;color:#8B6B50;margin-top:.15rem;}
     .order-amount{font-family:'Playfair Display',serif;font-weight:700;font-size:1rem;color:var(--terracotta);white-space:nowrap;}
     .order-meta{font-size:.78rem;color:#6B4F35;margin-top:.45rem;display:flex;flex-wrap:wrap;gap:.3rem .9rem;align-items:center;}
@@ -701,10 +702,33 @@
       container.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">Aucune commande pour le moment</div><div class="empty-sub">Les commandes passées sur vos produits apparaîtront ici.</div></div>`;
       return;
     }
-    container.innerHTML=commandes.map(ligneCommande).join('');
+    const prenomPar=await lirePrenomsAcheteurs();
+    container.innerHTML=commandes.map(c=>ligneCommande(c,prenomPar)).join('');
   }
 
-  function ligneCommande(c){
+  // Prénoms des acheteurs : un seul appel par chargement des commandes (fonction créée par ELO).
+  // Si l'appel échoue, les commandes s'affichent quand même, sans prénom.
+  async function lirePrenomsAcheteurs(){
+    try{
+      const {data,error}=await window._sb.rpc('prenoms_de_mes_acheteurs');
+      if(error) throw error;
+      return Object.fromEntries((data||[]).map(a=>[a.acheteur_id,a.prenom]));
+    }catch(e){
+      console.error('Prénoms des acheteurs non chargés :',e);
+      showAlert('error',"Les prénoms des acheteurs n'ont pas pu être chargés. Vos commandes restent affichées.");
+      return {};
+    }
+  }
+
+  // « Commande d'Awa », « Commande de Fatou », ou « Commande d'un acheteur » si le prénom manque.
+  function titreAcheteur(prenom){
+    const p=String(prenom ?? '').trim();
+    if(!p) return "Commande d'un acheteur";
+    const commenceParVoyelle=/^[aeiou]/i.test(p.normalize('NFD'));
+    return 'Commande '+(commenceParVoyelle?"d'":'de ')+p;
+  }
+
+  function ligneCommande(c,prenomPar){
     // Nom et unité : d'abord ceux joints par la requête, sinon ceux de « Mes produits »
     const p=c.produits || produitParId(c.produit_id);
     const nomProduit=p?echapper(p.nom):'Produit';
@@ -724,6 +748,7 @@
         <div class="order-top">
           <div>
             <div class="order-product">${nomProduit}</div>
+            <div class="order-buyer">${echapper(titreAcheteur(prenomPar[c.acheteur_id]))}</div>
             <div class="order-date">${echapper(dateFr(c.created_at))}</div>
           </div>
           <div class="order-amount">${fcfa(c.montant_total)}</div>
