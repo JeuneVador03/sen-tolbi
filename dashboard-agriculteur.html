@@ -138,6 +138,11 @@
     .error-msg.show{display:block;}
     .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;}
     .modal .alert{margin:1rem 0 0;}
+    /* Mon profil : indicatif + numéro, champ non modifiable */
+    .tel-row{display:grid;grid-template-columns:7rem minmax(0,1fr);gap:.5rem;}
+    .champ-label{font-size:.75rem;font-weight:600;color:var(--baobab);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.5px;}
+    .champ-fixe{padding:.7rem .9rem;border:1.5px dashed rgba(61,43,26,.15);border-radius:6px;background:var(--cream);font-size:.9rem;color:#6B4F35;overflow-wrap:anywhere;}
+    .champ-note{font-size:.72rem;color:#8B6B50;margin-top:.25rem;}
     .modal-btns{display:flex;gap:.8rem;margin-top:1.4rem;}
     .btn-cancel{flex:1;padding:.75rem;background:transparent;border:1.5px solid rgba(61,43,26,.2);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--baobab);}
     .btn-save{flex:1;padding:.75rem;background:var(--terracotta);color:white;border:none;border-bottom:3px solid var(--terracotta-dark);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;}
@@ -167,6 +172,7 @@
       .user-banner{padding:1.1rem 1rem;}
       .banner-actions{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;}
       .btn-banner{flex-direction:column;gap:.15rem;padding:.55rem .3rem;font-size:.75rem;}
+      .btn-profil{grid-column:1/-1;flex-direction:row;gap:.4rem;}
       .card-header,.card-body{padding-left:1rem;padding-right:1rem;}
       .modal{padding:1.4rem;width:94%;}
       .fab{right:1rem;bottom:calc(1.2rem + env(safe-area-inset-bottom));}
@@ -204,6 +210,7 @@
       </div>
     </div>
     <div class="banner-actions">
+      <button class="btn-banner btn-dashboard btn-profil" onclick="ouvrirProfil()">👤 <span>Mon profil</span></button>
       <a href="catalogue.html" class="btn-banner btn-dashboard">🛒 <span>Catalogue</span></a>
       <a href="index.html" class="btn-banner btn-dashboard">🏠 <span>Accueil</span></a>
       <button class="btn-banner btn-logout-banner" onclick="showLogout()">🚪 <span>Déconnexion</span></button>
@@ -289,6 +296,44 @@
   </div>
 </div>
 
+<!-- MODAL MON PROFIL -->
+<div class="modal-overlay" id="profilModal" onclick="fermerProfil(event)">
+  <div class="modal">
+    <div class="modal-title">👤 Mon profil</div>
+    <div class="form-row-2">
+      <div class="form-group"><label for="profilPrenom">Prénom *</label><input type="text" id="profilPrenom" autocomplete="given-name"/><div class="error-msg" id="err-profilPrenom"></div></div>
+      <div class="form-group"><label for="profilNom">Nom *</label><input type="text" id="profilNom" autocomplete="family-name"/><div class="error-msg" id="err-profilNom"></div></div>
+    </div>
+    <div class="form-group"><label for="profilTel">Téléphone *</label>
+      <div class="tel-row">
+        <select id="profilIndicatif" aria-label="Indicatif du pays">
+          <option value="+221">🇸🇳 +221</option><option value="+33">🇫🇷 +33</option>
+          <option value="+1">🇺🇸 +1</option><option value="+44">🇬🇧 +44</option>
+          <option value="+212">🇲🇦 +212</option><option value="+225">🇨🇮 +225</option>
+          <option value="+223">🇲🇱 +223</option><option value="+224">🇬🇳 +224</option>
+          <option value="+32">🇧🇪 +32</option><option value="+41">🇨🇭 +41</option>
+        </select>
+        <input type="tel" id="profilTel" placeholder="77 123 45 67" autocomplete="tel-national"/>
+      </div>
+      <div class="error-msg" id="err-profilTel"></div>
+    </div>
+    <div class="form-group"><label for="profilZone">Zone à Dakar *</label>
+      <select id="profilZone"></select>
+      <div class="error-msg" id="err-profilZone"></div>
+    </div>
+    <div class="form-group">
+      <div class="champ-label">Type de production</div>
+      <div class="champ-fixe" id="profilTypeProduction"></div>
+      <div class="champ-note">Ce champ ne peut pas être modifié.</div>
+    </div>
+    <div class="alert alert-error" id="profilError" role="alert"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fermerProfil()">Annuler</button>
+      <button class="btn-save" id="btnProfil" onclick="enregistrerProfil()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL DÉCONNEXION -->
 <div class="modal-overlay" id="logoutModal" onclick="closeLogout(event)">
   <div class="modal confirm-modal">
@@ -317,6 +362,7 @@
   const STATUTS={ en_attente:'En attente' };
 
   let monId=null;
+  let monProfil=null;
   let mesProduits=[];
 
   // ===== Outils =====
@@ -357,6 +403,10 @@
       return "Connexion internet impossible. Vérifiez votre réseau, puis réessayez.";
     if(texte.includes('jwt') || code==='PGRST301')
       return "Votre session a expiré. Déconnectez-vous puis reconnectez-vous.";
+    if(action==='profil'){
+      if(code==='23505') return "Ce numéro de téléphone est déjà utilisé par un autre compte.";
+      return "L'enregistrement de votre profil a échoué. Réessayez dans un instant."+(code?" (code "+code+")":"");
+    }
     if(code==='42501' || texte.includes('row-level security') || texte.includes('permission denied')){
       if(action==='ajout') return "Votre compte n'a pas l'autorisation de publier un produit : seuls les comptes vendeur le peuvent. Si vous êtes bien vendeur, déconnectez-vous puis reconnectez-vous.";
       return "Votre compte n'a pas l'autorisation de faire cette action sur ce produit.";
@@ -399,9 +449,8 @@
     }
 
     monId=session.user.id;
-    const nomComplet=[profil.prenom,profil.nom].filter(Boolean).join(' ');
-    document.getElementById('userName').textContent=nomComplet||'Mon compte';
-    document.getElementById('userRole').textContent=['Vendeur',profil.zone].filter(Boolean).join(' · ');
+    monProfil=profil;
+    afficherBandeau();
 
     document.getElementById('pageCheck').remove();
     document.getElementById('pageContent').hidden=false;
@@ -409,6 +458,137 @@
 
     await loadProduits();
     loadCommandes();
+  }
+
+  // Haut de la page : prénom, nom et zone du vendeur.
+  function afficherBandeau(){
+    const nomComplet=[monProfil.prenom,monProfil.nom].filter(Boolean).join(' ');
+    document.getElementById('userName').textContent=nomComplet||'Mon compte';
+    document.getElementById('userRole').textContent=['Vendeur',monProfil.zone].filter(Boolean).join(' · ');
+  }
+
+  // ===== Mon profil =====
+  // Liste commune des zones (Tâche 11) : la même que dans inscription.html.
+  const ZONES=['Almadies / Ngor','Grand Yoff','Guédiawaye','HLM / Liberté','Médina','Ouakam','Parcelles Assainies','Pikine','Plateau / Centre-ville','Rufisque','Autre'];
+  // Anciens noms enregistrés à l'inscription avant la liste commune.
+  const ANCIENNES_ZONES={'Plateau':'Plateau / Centre-ville','Ngor / Almadies':'Almadies / Ngor'};
+
+  // Téléphone : mêmes règles qu'à l'inscription (Tâche 11).
+  // Au Sénégal (+221), 9 chiffres commençant par 77, 78, 76, 75 ou 70.
+  // Espaces et préfixe +221 ou 00221 acceptés. Pour les autres pays : entre 6 et 15 chiffres.
+  function chiffresTel(tel){ return String(tel ?? '').replace(/[\s.\-()]/g,''); }
+  function lireTelephone(code,tel){
+    const n=chiffresTel(tel);
+    const prefixe=n.match(/^(\+221|00221)/);
+    return prefixe?{indicatif:'+221',numero:n.slice(prefixe[0].length)}:{indicatif:code,numero:n};
+  }
+  function erreurTelephone(code,tel){
+    if(!chiffresTel(tel)) return 'Numéro obligatoire';
+    const {indicatif,numero}=lireTelephone(code,tel);
+    if(indicatif==='+221') return /^7[05678]\d{7}$/.test(numero)?'':'Numéro sénégalais : 9 chiffres commençant par 77, 78, 76, 75 ou 70 (exemple : 77 123 45 67)';
+    if(!/^\d+$/.test(numero)) return 'Chiffres uniquement (exemple : 77 123 45 67)';
+    if(numero.length<6 || numero.length>15) return 'Numéro invalide';
+    return '';
+  }
+  // Sépare le numéro enregistré (ex. +221771234567) en indicatif + numéro.
+  function decouperTelephone(valeur){
+    const brut=chiffresTel(valeur);
+    const liste=[...document.getElementById('profilIndicatif').options].map(o=>o.value);
+    const indicatif=liste.find(i=>brut.startsWith(i));
+    return indicatif?{indicatif,numero:brut.slice(indicatif.length)}:{indicatif:'+221',numero:brut};
+  }
+
+  const controlesProfil={
+    profilPrenom:()=>document.getElementById('profilPrenom').value.trim()?'':'Indiquez votre prénom',
+    profilNom:()=>document.getElementById('profilNom').value.trim()?'':'Indiquez votre nom',
+    profilTel:()=>erreurTelephone(document.getElementById('profilIndicatif').value,document.getElementById('profilTel').value),
+    profilZone:()=>document.getElementById('profilZone').value?'':'Choisissez votre zone'
+  };
+  function afficherErreurProfilChamp(id,msg){
+    document.getElementById(id).classList.toggle('error',!!msg);
+    const el=document.getElementById('err-'+id);
+    el.textContent=msg;
+    el.classList.toggle('show',!!msg);
+  }
+  function verifierChampProfil(id){
+    const msg=controlesProfil[id]();
+    afficherErreurProfilChamp(id,msg);
+    return !msg;
+  }
+  function erreurProfil(msg){
+    const el=document.getElementById('profilError');
+    el.textContent='❌ '+msg; el.classList.add('show');
+    el.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+  function cacherErreurProfil(){ document.getElementById('profilError').classList.remove('show'); }
+
+  // Le message rouge disparaît dès que le champ est corrigé
+  Object.keys(controlesProfil).forEach(id=>{
+    const corriger=()=>{
+      if(document.getElementById(id).classList.contains('error')) verifierChampProfil(id);
+      cacherErreurProfil();
+    };
+    document.getElementById(id).addEventListener('input',corriger);
+    document.getElementById(id).addEventListener('change',corriger);
+  });
+  document.getElementById('profilIndicatif').addEventListener('change',()=>{
+    if(document.getElementById('profilTel').classList.contains('error')) verifierChampProfil('profilTel');
+  });
+
+  function ouvrirProfil(){
+    cacherErreurProfil();
+    Object.keys(controlesProfil).forEach(id=>afficherErreurProfilChamp(id,''));
+    document.getElementById('profilPrenom').value=monProfil.prenom||'';
+    document.getElementById('profilNom').value=monProfil.nom||'';
+    const tel=decouperTelephone(monProfil.telephone);
+    document.getElementById('profilIndicatif').value=tel.indicatif;
+    document.getElementById('profilTel').value=tel.numero;
+    const menu=document.getElementById('profilZone');
+    menu.innerHTML='<option value="">Sélectionnez...</option>';
+    ZONES.forEach(z=>menu.add(new Option(z)));
+    const zone=String(monProfil.zone ?? '').trim();
+    const zoneActuelle=ANCIENNES_ZONES[zone]||zone;
+    menu.value=ZONES.includes(zoneActuelle)?zoneActuelle:'';
+    document.getElementById('profilTypeProduction').textContent=monProfil.type_production||'Non renseigné';
+    document.getElementById('profilModal').classList.add('open');
+  }
+  function fermerProfil(e){if(!e||e.target===document.getElementById('profilModal'))document.getElementById('profilModal').classList.remove('open');}
+
+  async function enregistrerProfil(){
+    cacherErreurProfil();
+    const enErreur=Object.keys(controlesProfil).filter(id=>!verifierChampProfil(id));
+    if(enErreur.length){ document.getElementById(enErreur[0]).focus(); return; }
+
+    const lu=lireTelephone(document.getElementById('profilIndicatif').value,document.getElementById('profilTel').value);
+    // Seuls ces quatre champs sont envoyés : le type de production n'est jamais modifié.
+    const valeurs={
+      prenom:document.getElementById('profilPrenom').value.trim(),
+      nom:document.getElementById('profilNom').value.trim(),
+      telephone:lu.indicatif+lu.numero,
+      zone:document.getElementById('profilZone').value
+    };
+
+    const btn=document.getElementById('btnProfil');
+    btn.disabled=true; btn.textContent='Enregistrement...';
+    try{
+      const {data,error}=await window._sb.from('utilisateurs').update(valeurs).eq('id',monId).select('id');
+      if(error){ erreurProfil(messageErreur(error,'profil')); return; }
+      if(!data || data.length===0){ erreurProfil("L'enregistrement de votre profil a échoué. Rechargez la page, puis réessayez."); return; }
+    }catch(e){
+      erreurProfil(messageErreur(e,'profil')); return;
+    }finally{
+      btn.disabled=false; btn.textContent='Enregistrer';
+    }
+
+    monProfil={...monProfil,...valeurs};
+    // Le menu des autres pages lit ces informations
+    try{
+      const memo=JSON.parse(localStorage.getItem('sentolbi_user')||'{}');
+      localStorage.setItem('sentolbi_user',JSON.stringify({...memo,...valeurs}));
+    }catch(e){ /* le bandeau est déjà à jour, le reste suivra à la prochaine connexion */ }
+    afficherBandeau();
+    fermerProfil();
+    showAlert('success','✅ Votre profil a bien été enregistré.');
   }
 
   // ===== Mes produits =====
