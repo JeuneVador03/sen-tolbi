@@ -32,11 +32,13 @@
     .pwd-wrap{position:relative;}
     .pwd-toggle{position:absolute;right:.9rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:1rem;background:none;border:none;color:#8B6B50;}
     .forgot-link{text-align:right;margin-top:.3rem;}
-    .forgot-link a{font-size:.78rem;color:var(--terracotta);text-decoration:none;}
+    /* Zone de toucher un peu plus haute pour le doigt (tâche 8) */
+    .forgot-link a{display:inline-block;padding:.35rem 0;font-size:.78rem;color:var(--terracotta);text-decoration:none;}
     .alert{padding:.8rem 1rem;border-radius:6px;font-size:.82rem;margin-bottom:1rem;display:none;border-left:3px solid;}
     .error-msg{font-size:.72rem;color:#D63B3B;margin-top:.25rem;display:none;} .error-msg.show{display:block;}
     input.error{border-color:#D63B3B;}
     .alert.show{display:block;} .alert-error{background:rgba(214,59,59,.08);border-color:#D63B3B;color:#D63B3B;}
+    .alert-success{background:rgba(45,106,79,.08);border-color:var(--green);color:var(--green);}
     .btn-primary{width:100%;padding:.95rem;background:var(--terracotta);color:var(--white);border:none;border-radius:6px;border-bottom:3px solid var(--terracotta-dark);font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:1rem;display:flex;align-items:center;justify-content:center;gap:.5rem;}
     @media(hover:hover){.btn-primary:hover{background:var(--terracotta-dark);transform:translateY(1px);}}
     .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none;}
@@ -61,6 +63,7 @@
   </div>
   <div class="card">
     <div class="alert alert-error" id="alertError"></div>
+    <div class="alert alert-success" id="alertSuccess"></div>
     <div class="form-group">
       <label>Email</label>
       <input type="email" id="email" placeholder="votre@email.com" autocomplete="email"/>
@@ -73,6 +76,7 @@
         <button class="pwd-toggle" onclick="togglePwd()" type="button" aria-label="Afficher le mot de passe">👁️</button>
       </div>
       <div class="error-msg" id="err-password"></div>
+      <div class="forgot-link"><a href="mot-de-passe-oublie.html" id="lienOublie">Mot de passe oublié ?</a></div>
     </div>
     <button class="btn-primary" id="btnLogin" onclick="login()">Se connecter →</button>
     <div class="divider">ou</div>
@@ -298,6 +302,15 @@ function cacherAlerte() {
   const el = document.getElementById('alertError');
   el.textContent = '';
   el.classList.remove('show');
+  // Tâche 8 : on cache aussi le message vert (mot de passe modifié)
+  const ok = document.getElementById('alertSuccess');
+  if (ok) { ok.textContent = ''; ok.classList.remove('show'); }
+}
+// Tâche 8 : message vert (par exemple après un changement de mot de passe)
+function afficherSucces(texte) {
+  const el = document.getElementById('alertSuccess');
+  el.textContent = '✅ ' + texte;
+  el.classList.add('show');
 }
 
 // Format d'e-mail simple : quelque@chose.xx
@@ -381,6 +394,23 @@ async function redirigerSiDejaConnecte() {
 
   // Touche Entrée = se connecter
   ['email','password'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') login(); }));
+
+  // ===== Mot de passe oublié (tâche 8) =====
+  // Si l'e-mail est déjà tapé, on le garde pour la page suivante
+  // (dans sessionStorage, pas dans l'adresse de la page).
+  document.getElementById('lienOublie').addEventListener('click', () => {
+    const em = document.getElementById('email').value.trim();
+    try {
+      if (emailValide(em)) sessionStorage.setItem('sentolbi_email_oubli', em);
+      else sessionStorage.removeItem('sentolbi_email_oubli');
+    } catch (e) { /* navigation privée : pas grave, le champ sera vide */ }
+  });
+
+  // Retour depuis nouveau-mot-de-passe.html après un changement réussi
+  if (new URLSearchParams(window.location.search).get('reinit') === 'ok') {
+    afficherSucces('Votre mot de passe a été modifié. Connectez-vous avec votre nouveau mot de passe.');
+    history.replaceState(null, '', 'connexion.html');   // le message ne revient pas si on recharge
+  }
 
   redirigerSiDejaConnecte();
 
