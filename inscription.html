@@ -134,7 +134,7 @@
           <div class="error-msg" id="err-typeProduction">Choisissez votre type de production</div>
         </div>
         <div class="form-group"><label>Zone à Dakar <span class="required">*</span></label>
-          <select id="zone"><option value="">Sélectionnez...</option><option>Parcelles Assainies</option><option>Pikine</option><option>Guédiawaye</option><option>Rufisque</option><option>Plateau</option><option>Médina</option><option>Grand Yoff</option><option>Ouakam</option><option>Ngor / Almadies</option><option>HLM / Liberté</option><option>Autre</option></select>
+          <select id="zone"><option value="">Sélectionnez...</option></select>
           <div class="error-msg" id="err-zone">Choisissez votre zone</div>
         </div>
         <div class="form-group"><label>Paiements acceptés</label>
@@ -161,7 +161,7 @@
         </div>
         <div class="form-group"><label>Nom établissement <span class="optional">(optionnel)</span></label><input type="text" id="nomEtablissement" placeholder="Ex: Hôtel Téranga..."/></div>
         <div class="form-group"><label>Quartier à Dakar <span class="required">*</span></label>
-          <select id="zoneAcheteur"><option value="">Sélectionnez...</option><option>Plateau / Centre-ville</option><option>Médina</option><option>Pikine</option><option>Guédiawaye</option><option>Rufisque</option><option>Grand Yoff</option><option>Almadies / Ngor</option><option>HLM / Liberté</option><option>Parcelles Assainies</option><option>Autre</option></select>
+          <select id="zoneAcheteur"><option value="">Sélectionnez...</option></select>
           <div class="error-msg" id="err-zoneAcheteur">Choisissez votre quartier</div>
         </div>
       </div>
@@ -442,6 +442,13 @@ async function redirigerSiDejaConnecte() {
 
   initNav();
 
+  // Liste unique des zones : la même pour les vendeurs et les acheteurs.
+  const ZONES = ['Almadies / Ngor','Grand Yoff','Guédiawaye','HLM / Liberté','Médina','Ouakam','Parcelles Assainies','Pikine','Plateau / Centre-ville','Rufisque','Autre'];
+  ['zone','zoneAcheteur'].forEach(id => {
+    const menu = document.getElementById(id);
+    ZONES.forEach(z => menu.add(new Option(z)));
+  });
+
   let currentType = 'vendeur', currentStep = 1;
 
   function selectType(type, el) {
@@ -477,15 +484,20 @@ async function redirigerSiDejaConnecte() {
     return valid;
   }
 
-  // Téléphone : au Sénégal (+221), 9 chiffres commençant par 7 (mobile) ou 3 (fixe).
-  // Pour les autres pays : entre 6 et 15 chiffres.
+  // Téléphone : au Sénégal (+221), 9 chiffres commençant par 77, 78, 76, 75 ou 70.
+  // Espaces et préfixe +221 ou 00221 acceptés. Pour les autres pays : entre 6 et 15 chiffres.
   function chiffresTel(tel) { return tel.replace(/[\s.\-()]/g, ''); }
-  function erreurTelephone(code, tel) {
+  function lireTelephone(code, tel) {
     const n = chiffresTel(tel);
-    if (!n) return 'Numéro obligatoire';
-    if (!/^\d+$/.test(n)) return 'Chiffres uniquement, sans indicatif (exemple : 77 123 45 67)';
-    if (code === '+221' && !/^[37]\d{8}$/.test(n)) return 'Numéro sénégalais : 9 chiffres, commençant par 7 ou 3 (exemple : 77 123 45 67)';
-    if (code !== '+221' && (n.length < 6 || n.length > 15)) return 'Numéro invalide';
+    const prefixe = n.match(/^(\+221|00221)/);
+    return prefixe ? { indicatif: '+221', numero: n.slice(prefixe[0].length) } : { indicatif: code, numero: n };
+  }
+  function erreurTelephone(code, tel) {
+    if (!chiffresTel(tel)) return 'Numéro obligatoire';
+    const { indicatif, numero } = lireTelephone(code, tel);
+    if (indicatif === '+221') return /^7[05678]\d{7}$/.test(numero) ? '' : 'Numéro sénégalais : 9 chiffres commençant par 77, 78, 76, 75 ou 70 (exemple : 77 123 45 67)';
+    if (!/^\d+$/.test(numero)) return 'Chiffres uniquement (exemple : 77 123 45 67)';
+    if (numero.length < 6 || numero.length > 15) return 'Numéro invalide';
     return '';
   }
 
@@ -561,8 +573,9 @@ async function redirigerSiDejaConnecte() {
     const prenom=document.getElementById('prenom').value.trim();
     const nom=document.getElementById('nom').value.trim();
     const email=document.getElementById('email').value.trim();
-    const code=document.getElementById('countryCode').value;
-    const tel=code+chiffresTel(document.getElementById('tel').value);
+    // Format unique enregistré, par exemple +221771234567
+    const lu=lireTelephone(document.getElementById('countryCode').value,document.getElementById('tel').value);
+    const tel=lu.indicatif+lu.numero;
     // Le type de compte ne peut être que vendeur ou acheteur (jamais admin).
     const type = currentType === 'acheteur' ? 'acheteur' : 'vendeur';
 
