@@ -94,6 +94,7 @@
       .hero{grid-template-columns:1fr;padding:1.5rem;padding-top:80px;}
       .hero::after{display:none;} .hero-visual{display:none;}
       .hero-ctas{flex-direction:column;}
+      .hero-ctas a{text-align:center;}
       .launch-banner{padding:2rem 1.5rem;flex-direction:column;}
       .section{padding:4rem 1.5rem;}
       .profiles-grid{grid-template-columns:1fr;}
@@ -108,9 +109,10 @@
   <div class="hero-text">
     <div class="hero-tag">🇸🇳 La plateforme agricole sénégalaise</div>
     <h1>Les <em>producteurs</em><br>rencontrent leurs<br><span class="accent">acheteurs</span></h1>
-    <p class="hero-sub">Sen Tolbi connecte directement les agriculteurs sénégalais aux acheteurs — marchands, restaurants, hôtels, particuliers. Moins d'intermédiaires, plus de valeur pour ceux qui cultivent la terre.</p>
+    <p class="hero-sub">Sen Tolbi connecte directement les agriculteurs sénégalais aux acheteurs — marchands, restaurants, hôtels, particuliers. Notre objectif : moins d'intermédiaires et plus de valeur pour ceux qui cultivent la terre.</p>
     <div class="hero-ctas" id="heroCtas">
-      <a href="inscription.html" class="btn-primary">Je suis producteur →</a>
+      <a href="inscription.html?role=vendeur" class="btn-primary" id="btnJeVends">Je vends →</a>
+      <a href="inscription.html?role=acheteur" class="btn-primary" id="btnJAchete">J'achète →</a>
       <a href="catalogue.html" class="btn-outline">Voir les produits</a>
     </div>
   </div>
@@ -130,13 +132,12 @@
       </div>
       <div class="float-card" style="top:10px;right:-15px;">
         <div class="fc-label">🌾 Dakar</div>
-        <div class="fc-val">Disponible</div>
+        <div class="fc-val">En lancement</div>
         <div class="fc-sub">Zone de lancement</div>
       </div>
       <div class="float-card" style="bottom:80px;left:-35px;animation-delay:1.5s">
         <div class="fc-label">✅ Inscription</div>
         <div class="fc-val" style="font-size:.95rem;color:#2D6A4F;">Gratuite</div>
-        <div class="fc-sub">Sans commission cachée</div>
       </div>
     </div>
   </div>
@@ -147,15 +148,11 @@
 <div class="launch-banner">
   <div>
     <div class="launch-tag">🚀 Lancement en cours</div>
-    <div class="launch-title">Disponible à Dakar — Bientôt partout au Sénégal</div>
-    <div class="launch-sub">Nous démarrons à Dakar et nous étendrons région par région</div>
+    <div class="launch-title">Nous démarrons à Dakar</div>
+    <div class="launch-sub">Le site est en cours de lancement, d'abord à Dakar.</div>
   </div>
   <div class="launch-regions">
     <div class="region-chip region-active">📍 Dakar</div>
-    <div class="region-chip region-soon">Thiès — bientôt</div>
-    <div class="region-chip region-soon">Kaolack — bientôt</div>
-    <div class="region-chip region-soon">Saint-Louis — bientôt</div>
-    <div class="region-chip region-soon">+ 10 régions à venir</div>
   </div>
 </div>
 
@@ -165,7 +162,7 @@
   <p class="section-tag">Simple comme le marché</p>
   <h2 class="section-title">Comment fonctionne Sen Tolbi ?</h2>
   <div class="steps">
-    <div class="step"><span class="step-icon">📝</span><div class="step-num">Étape 01</div><h3>Créez votre profil</h3><p>Inscrivez-vous gratuitement en 5 minutes. Vendeur ou acheteur, tout le monde a sa place.</p></div>
+    <div class="step"><span class="step-icon">📝</span><div class="step-num">Étape 01</div><h3>Créez votre profil</h3><p>Inscrivez-vous gratuitement. Vendeur ou acheteur, tout le monde a sa place.</p></div>
     <div class="step"><span class="step-icon">🌾</span><div class="step-num">Étape 02</div><h3>Publiez vos produits</h3><p>Les producteurs listent leurs récoltes avec prix et quantités disponibles.</p></div>
     <div class="step"><span class="step-icon">🛒</span><div class="step-num">Étape 03</div><h3>Commandez</h3><p>Choisissez vos produits dans le catalogue et envoyez votre commande depuis le panier.</p></div>
     <div class="step"><span class="step-icon">🤝</span><div class="step-num">Étape 04</div><h3>Recevez vos produits</h3><p>Le paiement en ligne n'est pas encore disponible. L'équipe Sen Tolbi vous contacte pour organiser le paiement et la livraison.</p></div>
@@ -174,24 +171,23 @@
 
 <section class="section profiles" id="profils">
   <p class="section-tag">Fait pour vous</p>
-  <h2 class="section-title">Qui utilise Sen Tolbi ?</h2>
+  <h2 class="section-title">À qui s'adresse Sen Tolbi ?</h2>
   <div class="profiles-grid">
     <div class="profile-card">
       <span class="profile-emoji">👨‍🌾</span>
       <h3>Vous êtes producteur</h3>
-      <p>Vendez directement sans passer par des revendeurs. Fixez vos propres prix et touchez des acheteurs à Dakar.</p>
+      <p>Vendez directement sans passer par des revendeurs. Fixez vos propres prix et proposez vos produits aux acheteurs de Dakar.</p>
       <ul class="profile-perks">
-        <li>Profil et vitrine 100% gratuits</li>
+        <li>Inscription gratuite</li>
         <li>Publiez vos produits en quelques clics</li>
       </ul>
     </div>
     <div class="profile-card">
       <span class="profile-emoji">🏪</span>
       <h3>Vous êtes acheteur</h3>
-      <p>Trouvez des producteurs locaux de qualité — restaurateur, hôtel, marchand ou particulier.</p>
+      <p>Trouvez des producteurs locaux — restaurateur, hôtel, marchand ou particulier.</p>
       <ul class="profile-perks">
-        <li>Recherche par produit et disponibilité</li>
-        <li>Produits frais de saison à Dakar</li>
+        <li>Recherche par produit et par catégorie</li>
       </ul>
     </div>
   </div>
@@ -233,6 +229,7 @@
   .nav-hamburger { padding: .75rem 1rem; }
   .nav-logo-icon { width: 30px; height: 30px; font-size: .9rem; }
   .nav-logo-text { font-size: 1.15rem; }
+  .hamburger-btn { width: 44px; height: 44px; align-items: center; justify-content: center; }
 }
 .nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 998; backdrop-filter: blur(2px); }
 .nav-overlay.open { display: block; }
@@ -389,7 +386,8 @@ async function logoutNav() {
   window.location.href = 'index.html';
 }
 
-  // Boutons de l'accueil : seulement si une vraie session existe, vers le bon espace.
+  // Boutons de l'accueil : sans session, ils vont vers l'inscription avec le bon rôle ;
+  // avec une vraie session, les deux mènent à l'espace du compte.
   async function updateHero() {
     let session = null;
     try { ({ data: { session } } = await window._sb.auth.getSession()); } catch (e) {}
@@ -397,9 +395,8 @@ async function logoutNav() {
     let user = JSON.parse(localStorage.getItem('sentolbi_user') || '{}');
     if (!user.type) user = await lireProfil(session.user);
     const dashLink = pageDeSonEspace(user.type);
-    document.getElementById('heroCtas').innerHTML = `
-      <a href="${dashLink}" class="btn-primary">Mon tableau de bord →</a>
-      <a href="catalogue.html" class="btn-outline">Voir les produits</a>`;
+    document.getElementById('btnJeVends').href = dashLink;
+    document.getElementById('btnJAchete').href = dashLink;
     document.getElementById('ctaBtn').textContent = 'Accéder à mon espace →';
     document.getElementById('ctaBtn').href = dashLink;
   }

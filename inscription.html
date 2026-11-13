@@ -651,6 +651,11 @@ async function redirigerSiDejaConnecte() {
   document.getElementById('password2').addEventListener('input', e => { showError('pwd2', false); e.target.classList.remove('error'); });
   document.getElementById('cguCheck').addEventListener('change', () => showError('cgu', false));
 
+  // Arrivée depuis l'accueil : « J'achète » présélectionne le rôle acheteur.
+  if (new URLSearchParams(location.search).get('role') === 'acheteur') {
+    selectType('acheteur', document.querySelectorAll('.type-btn')[1]);
+  }
+
   // Quelqu'un déjà connecté qui ouvre l'inscription retourne dans son espace.
   redirigerSiDejaConnecte();
 </script>
